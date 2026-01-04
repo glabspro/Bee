@@ -13,6 +13,7 @@ import StaffManagement from './components/StaffManagement';
 import Login from './components/Login';
 import { Bell, X, Check, Calendar, UserPlus, Clock } from 'lucide-react';
 import { MOCK_PATIENTS as INITIAL_PATIENTS, INITIAL_SEDES, MOCK_PROFESSIONALS } from './constants';
+// Corregidas las rutas de importación: estaban buscando un nivel arriba erróneamente
 import { supabase } from './services/supabaseClient';
 
 const App: React.FC = () => {
@@ -33,7 +34,9 @@ const App: React.FC = () => {
   ]);
 
   const [currentCompanyId, setCurrentCompanyId] = useState('bee-main');
-  const [sedes, setSedes] = useState<Sede[]>([]);
+  
+  // Inicializamos con INITIAL_SEDES para que nunca esté en blanco mientras carga
+  const [sedes, setSedes] = useState<Sede[]>(INITIAL_SEDES.map(s => ({...s, companyId: 'bee-main'})));
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [patients, setPatients] = useState<Patient[]>(INITIAL_PATIENTS.map(p => ({...p, companyId: 'bee-main'})));
   const [professionals, setProfessionals] = useState<Professional[]>(MOCK_PROFESSIONALS.map(p => ({...p, companyId: 'bee-main', userId: 'u-1'})));
@@ -42,7 +45,6 @@ const App: React.FC = () => {
     { id: 'u-1', name: 'Dr. Admin Principal', email: 'admin@bee.com', role: UserRole.ADMIN, companyId: 'bee-main' } 
   ]);
 
-  // --- CARGA DE DATOS DESDE SUPABASE ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -63,12 +65,9 @@ const App: React.FC = () => {
              availability: s.availability
           }));
           setSedes(mappedSedes);
-        } else {
-          setSedes(INITIAL_SEDES.map(s => ({...s, companyId: 'bee-main'})));
         }
       } catch (error) {
-        console.warn("Supabase no disponible o tablas no creadas. Cargando datos locales de respaldo.");
-        setSedes(INITIAL_SEDES.map(s => ({...s, companyId: 'bee-main'})));
+        console.warn("Supabase no disponible o tablas no creadas. Operando con datos locales.");
       }
     };
 

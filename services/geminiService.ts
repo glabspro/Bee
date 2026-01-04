@@ -1,19 +1,24 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Función auxiliar para obtener la instancia de AI de forma segura
+const getAI = () => {
+  const apiKey = (window as any).process?.env?.API_KEY || "";
+  return new GoogleGenAI({ apiKey });
+};
 
 /**
  * Genera un resumen profesional de notas clínicas.
  */
 export const summarizeClinicalNotes = async (notes: string) => {
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Resume de forma profesional y concisa las siguientes notas clínicas de un paciente. Enfócate estrictamente en hallazgos, diagnóstico y plan de tratamiento: "${notes}"`,
       config: {
         maxOutputTokens: 600,
-        thinkingConfig: { thinkingBudget: 300 } // Control de razonamiento para síntesis
+        thinkingConfig: { thinkingBudget: 300 }
       }
     });
     return response.text?.trim() || "No se pudo generar el resumen clínico.";
@@ -25,13 +30,13 @@ export const summarizeClinicalNotes = async (notes: string) => {
 
 /**
  * Sugiere diagnósticos basados en hallazgos preliminares.
- * Utiliza el modelo Pro para un razonamiento médico más profundo.
  */
 export const suggestDiagnosis = async (findings: string) => {
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: `Analiza los siguientes hallazgos clínicos: "${findings}". Proporciona una lista de posibles diagnósticos diferenciales (como referencia orientativa para el especialista) y sugiere los servicios clínicos más adecuados. Responde exclusivamente en JSON.`,
+      contents: `Analiza los siguientes hallazgos clínicos: "${findings}". Proporciona una lista de posibles diagnósticos diferenciales y sugiere los servicios clínicos más adecuados. Responde exclusivamente en JSON.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -53,7 +58,7 @@ export const suggestDiagnosis = async (findings: string) => {
           },
           required: ["suggestions", "recommendedService"]
         },
-        thinkingConfig: { thinkingBudget: 8000 } // Presupuesto de pensamiento para razonamiento clínico complejo
+        thinkingConfig: { thinkingBudget: 8000 }
       }
     });
     
