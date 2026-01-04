@@ -28,6 +28,14 @@ const App: React.FC = () => {
         portalHero: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2053',
         primaryColor: '#714B67',
         active: true
+    },
+    {
+      id: 'dent-pro',
+      name: 'Dental Pro Network',
+      logo: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=200',
+      portalHero: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=2053',
+      primaryColor: '#017E84',
+      active: true
     }
   ]);
 
@@ -52,6 +60,7 @@ const App: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>(INITIAL_PATIENTS.map(p => ({...p, companyId: 'bee-main'})));
   const [professionals, setProfessionals] = useState<Professional[]>(MOCK_PROFESSIONALS.map(p => ({...p, companyId: 'bee-main', userId: 'u-1'})));
   const [users, setUsers] = useState<User[]>([
+    { id: 'u-0', name: 'SaaS Super Admin', email: 'global@bee.com', role: UserRole.SUPER_ADMIN, companyId: 'bee-global' },
     { id: 'u-1', name: 'Dr. Admin Principal', email: 'admin@bee.com', role: UserRole.ADMIN, companyId: 'bee-main' } 
   ]);
 
@@ -75,9 +84,12 @@ const App: React.FC = () => {
     setNotifications(prev => [notif, ...prev]);
   };
 
-  const handleLogin = () => {
-    setCurrentUser(users[0]);
-    setViewState(prev => ({ ...prev, currentView: 'dashboard' }));
+  const handleLogin = (role: UserRole) => {
+    const user = users.find(u => u.role === role) || users[1];
+    setCurrentUser(user);
+    // Si es super admin, lo enviamos a la vista de SaaS Admin por defecto
+    const targetView = role === UserRole.SUPER_ADMIN ? 'saas-admin' : 'dashboard';
+    setViewState(prev => ({ ...prev, currentView: targetView }));
   };
 
   const handleViewChange = (view: ViewState['currentView']) => {
@@ -210,6 +222,11 @@ const App: React.FC = () => {
                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                <span className="text-slate-500 text-[9px] font-bold uppercase tracking-[0.2em]">{currentCompany.name}</span>
             </div>
+            {currentUser?.role === UserRole.SUPER_ADMIN && (
+              <div className="bg-brand-navy text-white px-4 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest border border-white/10 shadow-lg">
+                Modo SaaS Admin
+              </div>
+            )}
           </div>
           
           <div className="flex items-center gap-5">
@@ -220,7 +237,7 @@ const App: React.FC = () => {
               </button>
             </div>
             <div className="h-8 w-[1px] bg-slate-100 mx-1" />
-            <div className="flex items-center gap-3 group cursor-pointer">
+            <div className="flex items-center gap-3 group cursor-pointer" onClick={() => handleViewChange('dashboard')}>
                <div className="text-right">
                   <p className="text-xs font-bold text-brand-navy">{currentUser?.name || 'Admin'}</p>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{currentUser?.role}</p>

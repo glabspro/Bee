@@ -24,15 +24,15 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, userRole = UserRole.ADMIN }) => {
-  // Definición de menú por roles y contextos
-  // SUPER_ADMIN: Ve el panel global de clínicas
-  // ADMIN: Ve la gestión completa de SU clínica
+  // El SUPER_ADMIN ahora tiene acceso a TODOS los módulos
+  const isGodMode = userRole === UserRole.SUPER_ADMIN;
+
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.RECEPCIONIST] },
-    { id: 'appointments', icon: CalendarDays, label: 'Agenda Maestra', roles: [UserRole.ADMIN, UserRole.RECEPCIONIST, UserRole.SPECIALIST] },
-    { id: 'patients', icon: Users, label: 'Expedientes', roles: [UserRole.ADMIN, UserRole.RECEPCIONIST, UserRole.SPECIALIST] },
-    { id: 'staff-management', icon: UserCog, label: 'Personal & Staff', roles: [UserRole.ADMIN] },
-    { id: 'schedules', icon: Clock, label: 'Sedes y Horarios', roles: [UserRole.ADMIN] },
+    { id: 'appointments', icon: CalendarDays, label: 'Agenda Maestra', roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.RECEPCIONIST, UserRole.SPECIALIST] },
+    { id: 'patients', icon: Users, label: 'Expedientes', roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.RECEPCIONIST, UserRole.SPECIALIST] },
+    { id: 'staff-management', icon: UserCog, label: 'Personal & Staff', roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN] },
+    { id: 'schedules', icon: Clock, label: 'Sedes y Horarios', roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN] },
     { id: 'saas-admin', icon: Building2, label: 'SaaS Global', roles: [UserRole.SUPER_ADMIN] },
   ];
 
@@ -75,14 +75,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, userRole =
           );
         })}
 
-        {/* Sección de Marca Blanca exclusiva para el Administrador de la Clínica */}
-        {userRole === UserRole.ADMIN && (
+        {/* Sección de Marca Blanca: Visible para ADMIN y SUPER_ADMIN */}
+        {(userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN) && (
           <div className="pt-6 mt-6 border-t border-white/10 space-y-1.5">
             <p className="px-5 text-[9px] font-bold text-white/20 uppercase tracking-[0.4em] mb-4">Personalización</p>
             <button
               onClick={() => onViewChange('saas-admin')} 
               className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 group ${
-                currentView === 'saas-admin' ? 'bg-white text-brand-navy shadow-xl' : 'text-white/50 hover:text-white hover:bg-white/5'
+                currentView === 'saas-admin' && !isGodMode ? 'bg-white text-brand-navy shadow-xl' : 'text-white/50 hover:text-white hover:bg-white/5'
               }`}
             >
               <Palette size={20} className={currentView === 'saas-admin' ? 'text-brand-accent' : ''} />
@@ -102,7 +102,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, userRole =
           <ExternalLink size={14} className="opacity-40 group-hover:text-brand-secondary transition-all" />
         </button>
 
-        <button className="w-full flex items-center gap-4 px-6 py-4 text-white/20 hover:text-red-400 transition-all text-xs font-bold uppercase tracking-[0.2em] group">
+        <button 
+          onClick={() => window.location.reload()}
+          className="w-full flex items-center gap-4 px-6 py-4 text-white/20 hover:text-red-400 transition-all text-xs font-bold uppercase tracking-[0.2em] group"
+        >
           <LogOut size={18} />
           Cerrar Sesión
         </button>
