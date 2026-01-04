@@ -16,7 +16,8 @@ import {
   Zap,
   CalendarOff,
   Layout,
-  Loader2
+  Loader2,
+  Building
 } from 'lucide-react';
 import { Sede, DayAvailability, TimeInterval } from '../types';
 
@@ -36,19 +37,17 @@ const PRESETS = [
 ];
 
 const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, onAddSede }) => {
-  const [selectedSede, setSelectedSede] = useState<Sede | null>(sedes.length > 0 ? sedes[0] : null);
+  const [selectedSede, setSelectedSede] = useState<Sede | null>(null);
   const [showSedeModal, setShowSedeModal] = useState<'edit' | 'add' | null>(null);
-  const [sedeForm, setSedeForm] = useState<Partial<Sede>>({});
+  const [sedeForm, setSedeForm] = useState<Partial<Sede>>({ name: '', address: '', phone: '', whatsapp: '' });
   const [isSaving, setIsSaving] = useState(false);
-  
   const [localAvailability, setLocalAvailability] = useState<Record<string, DayAvailability>>({});
 
-  // Sincronizar sede seleccionada cuando carguen las sedes de la DB
   useEffect(() => {
-    if (!selectedSede && sedes.length > 0) {
+    if (sedes.length > 0 && !selectedSede) {
       setSelectedSede(sedes[0]);
     }
-  }, [sedes]);
+  }, [sedes, selectedSede]);
 
   useEffect(() => {
     if (selectedSede) {
@@ -62,15 +61,6 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
       setLocalAvailability(initial);
     }
   }, [selectedSede]);
-
-  if (!selectedSede) {
-    return (
-      <div className="h-[60vh] flex flex-col items-center justify-center text-slate-400 gap-4 animate-fade-in">
-        <Loader2 className="animate-spin text-brand-secondary" size={40} />
-        <p className="font-ubuntu font-bold">Cargando centros operativos...</p>
-      </div>
-    );
-  }
 
   const handleToggleDay = (day: string) => {
     setLocalAvailability(prev => ({
@@ -146,11 +136,54 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
       await onUpdateSede(updatedSede);
       alert("¡Sincronizado con la nube exitosamente!");
     } catch (e) {
-      alert("Error al guardar. Verifica tu conexión.");
+      alert("Error al guardar.");
     } finally {
       setIsSaving(false);
     }
   };
+
+  const handleCreateSede = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const newSede: Sede = {
+      id: 'sede-' + Math.random().toString(36).substr(2, 5),
+      name: sedeForm.name || 'Nueva Sede',
+      address: sedeForm.address || '',
+      phone: sedeForm.phone || '',
+      whatsapp: sedeForm.whatsapp || '',
+      companyId: '', // App.tsx maneja esto
+      availability: localAvailability
+    };
+    await onAddSede(newSede);
+    setShowSedeModal(null);
+    setSedeForm({ name: '', address: '', phone: '', whatsapp: '' });
+  };
+
+  if (sedes.length === 0 && !showSedeModal) {
+    return (
+      <div className="h-[70vh] flex flex-col items-center justify-center text-center p-12 animate-fade-in bg-white rounded-[4rem] border-2 border-dashed border-slate-100 mx-4">
+        <div className="w-24 h-24 bg-brand-lightSecondary rounded-full flex items-center justify-center text-brand-secondary mb-8">
+          <Building size={48} />
+        </div>
+        <h3 className="text-3xl font-ubuntu font-bold text-brand-navy">No hay sedes registradas</h3>
+        <p className="text-slate-400 mt-4 max-w-md font-medium">Configura tu primer centro de atención para comenzar a gestionar horarios y citas.</p>
+        <button 
+          onClick={() => setShowSedeModal('add')}
+          className="mt-10 bg-brand-navy text-white px-10 py-4 rounded-2xl font-bold flex items-center gap-3 shadow-2xl hover:bg-brand-secondary transition-all"
+        >
+          <Plus size={20} /> Registrar Primera Sede
+        </button>
+      </div>
+    );
+  }
+
+  if (!selectedSede) {
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center text-slate-400 gap-4 animate-fade-in">
+        <Loader2 className="animate-spin text-brand-secondary" size={40} />
+        <p className="font-ubuntu font-bold tracking-widest uppercase text-[10px]">Cargando Centros Bee...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-20">
@@ -174,7 +207,7 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
             onClick={handleSaveAll}
             className="flex items-center gap-3 bg-brand-navy text-white px-8 py-3 rounded-2xl font-bold hover:shadow-2xl transition-all text-xs shadow-xl shadow-brand-navy/10 disabled:opacity-50"
           >
-            {isSaving ? 'Guardando...' : <><Save size={18} className="text-brand-secondary" /> Guardar en la Nube</>}
+            {isSaving ? 'Guardando...' : <><Save size={18} className="text-brand-secondary" /> Guardar Cambios</>}
           </button>
         </div>
       </header>
@@ -223,15 +256,6 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
                   <MessageCircle size={14} className="text-green-500" /> WhatsApp: {selectedSede.whatsapp}
                </div>
             </div>
-
-            <div className="bg-brand-navy p-6 rounded-[2rem] text-white">
-               <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-brand-secondary mb-2">
-                 <Zap size={12} /> Sugerencia de Gestión
-               </div>
-               <p className="text-[11px] text-white/60 leading-relaxed">
-                 Usa intervalos múltiples para bloquear las horas de almuerzo o descansos administrativos.
-               </p>
-            </div>
           </div>
         </div>
 
@@ -242,7 +266,7 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
                 <Clock className="text-brand-secondary" size={20} /> Turnos de Atención
               </h3>
               <button onClick={() => copyToWorkDays('Lunes')} className="px-4 py-2 bg-slate-50 text-slate-500 text-[10px] font-bold rounded-xl hover:bg-brand-secondary/10 hover:text-brand-secondary transition-all flex items-center gap-2 uppercase tracking-widest">
-                <Copy size={12} /> Copiar Lunes a Vie
+                <Copy size={12} /> Copiar Lunes
               </button>
             </div>
 
@@ -298,18 +322,6 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
                               <Plus size={20} />
                             </button>
                           </div>
-                          <div className="flex items-center gap-2 pt-2">
-                             <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mr-2">Plantillas:</span>
-                             {PRESETS.map(p => (
-                               <button 
-                                key={p.name}
-                                onClick={() => applyPreset(day, p.intervals)}
-                                className="px-3 py-1 bg-slate-50 text-slate-400 text-[9px] font-bold rounded-lg border border-transparent hover:border-slate-200 hover:text-brand-navy transition-all"
-                               >
-                                 {p.name}
-                               </button>
-                             ))}
-                          </div>
                         </>
                       ) : (
                         <div className="h-20 flex items-center border border-dashed border-slate-200 rounded-3xl justify-center bg-slate-100/30">
@@ -336,7 +348,7 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
               </h3>
               <button onClick={() => setShowSedeModal(null)} className="text-slate-300 hover:text-brand-navy p-2"><X size={24} /></button>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); setShowSedeModal(null); }} className="p-8 space-y-6">
+            <form onSubmit={handleCreateSede} className="p-8 space-y-6">
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nombre Comercial</label>

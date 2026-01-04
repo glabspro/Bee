@@ -9,6 +9,7 @@ import PatientPortal from './components/PatientPortal';
 import ScheduleManager from './components/ScheduleManager';
 import ClinicalRecordForm from './components/ClinicalRecordForm';
 import SaasAdmin from './components/SaasAdmin';
+import StaffManagement from './components/StaffManagement';
 import Login from './components/Login';
 import { supabase } from './services/supabaseClient';
 
@@ -103,6 +104,20 @@ const App: React.FC = () => {
     if (data) setUsers(prev => [...prev, { ...data[0], companyId: data[0].company_id, sedeIds: data[0].sede_ids }]);
   };
 
+  const handleAddProfessional = async (prof: Professional) => {
+    const payload = { 
+      id: prof.id, 
+      name: prof.name, 
+      specialty: prof.specialty, 
+      avatar: prof.avatar, 
+      sede_ids: prof.sedeIds, 
+      user_id: prof.userId, 
+      company_id: currentCompanyId 
+    };
+    const { data } = await supabase.from('professionals').insert([payload]).select();
+    if (data) setProfessionals(prev => [...prev, { ...data[0], companyId: data[0].company_id, sedeIds: data[0].sede_ids, userId: data[0].user_id }]);
+  };
+
   const handleAddSede = async (sede: Sede) => {
     const payload = { ...sede, company_id: currentCompanyId };
     delete (payload as any).companyId;
@@ -164,6 +179,7 @@ const App: React.FC = () => {
             supabase.from('patients').update({ history: updated.history }).eq('id', pid).then(() => setPatients(patients.map(it => it.id === pid ? updated : it)));
           }
       }} onScheduleSessions={(apts) => apts.forEach(handleAddAppointment)} sedes={sedes} professionals={professionals} />;
+      case 'staff-management': return <StaffManagement professionals={professionals} users={users} sedes={sedes} onAddProfessional={handleAddProfessional} onAddUser={handleAddUser} />;
       case 'schedules': return <ScheduleManager sedes={sedes} onUpdateSede={handleUpdateSede} onAddSede={handleAddSede} />;
       case 'saas-admin': return <SaasAdmin companies={companies} users={users} sedes={sedes} onAddCompany={handleAddCompany} onAddUser={handleAddUser} onSelectCompany={(id) => { setCurrentCompanyId(id); setViewState({ currentView: 'dashboard' }); }} userRole={currentUser?.role} currentCompanyId={currentCompanyId} onUpdateCompany={handleUpdateCompany} />;
       case 'clinical-record':
