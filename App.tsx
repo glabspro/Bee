@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { ViewState, Appointment, Patient, AppointmentStatus, Sede, AppNotification, ClinicalHistoryEntry, Company, User, UserRole, Professional } from './types';
+import React, { useState, useEffect } from 'react';
+import { ViewState, Appointment, Patient, AppointmentStatus, Sede, Company, User, UserRole, Professional } from './types';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import AppointmentManager from './components/AppointmentManager';
@@ -9,127 +9,139 @@ import PatientPortal from './components/PatientPortal';
 import ScheduleManager from './components/ScheduleManager';
 import ClinicalRecordForm from './components/ClinicalRecordForm';
 import SaasAdmin from './components/SaasAdmin';
-import StaffManagement from './components/StaffManagement';
 import Login from './components/Login';
-import { Bell, X, Check, Calendar, UserPlus, Clock } from 'lucide-react';
-import { MOCK_PATIENTS as INITIAL_PATIENTS, INITIAL_SEDES, MOCK_PROFESSIONALS } from './constants';
-// Corregidas las rutas de importación: estaban buscando un nivel arriba erróneamente
 import { supabase } from './services/supabaseClient';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [viewState, setViewState] = useState<ViewState>({
-    currentView: 'login'
-  });
-
-  const [companies, setCompanies] = useState<Company[]>([
-    {
-        id: 'bee-main',
-        name: 'Bee Medical Center',
-        logo: 'https://images.unsplash.com/photo-1631217816660-ad4830193ca5?auto=format&fit=crop&q=80&w=200',
-        portalHero: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2053',
-        primaryColor: '#714B67',
-        active: true
-    }
-  ]);
-
-  const [currentCompanyId, setCurrentCompanyId] = useState('bee-main');
+  const [viewState, setViewState] = useState<ViewState>({ currentView: 'login' });
+  const [currentCompanyId, setCurrentCompanyId] = useState<string>('');
   
-  // Inicializamos con INITIAL_SEDES para que nunca esté en blanco mientras carga
-  const [sedes, setSedes] = useState<Sede[]>(INITIAL_SEDES.map(s => ({...s, companyId: 'bee-main'})));
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [sedes, setSedes] = useState<Sede[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [patients, setPatients] = useState<Patient[]>(INITIAL_PATIENTS.map(p => ({...p, companyId: 'bee-main'})));
-  const [professionals, setProfessionals] = useState<Professional[]>(MOCK_PROFESSIONALS.map(p => ({...p, companyId: 'bee-main', userId: 'u-1'})));
-  const [users, setUsers] = useState<User[]>([
-    { id: 'u-0', name: 'SaaS Super Admin', email: 'global@bee.com', role: UserRole.SUPER_ADMIN, companyId: 'bee-global' },
-    { id: 'u-1', name: 'Dr. Admin Principal', email: 'admin@bee.com', role: UserRole.ADMIN, companyId: 'bee-main' } 
-  ]);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchGlobalData = async () => {
       try {
-        const { data: sedesData, error: sedesError } = await supabase
-          .from('sedes')
-          .select('*');
-        
-        if (sedesError) throw sedesError;
-
-        if (sedesData && sedesData.length > 0) {
-          const mappedSedes: Sede[] = sedesData.map(s => ({
-             id: s.id,
-             companyId: s.company_id,
-             name: s.name,
-             address: s.address,
-             phone: s.phone,
-             whatsapp: s.whatsapp,
-             availability: s.availability
-          }));
-          setSedes(mappedSedes);
+        const { data: cos } = await supabase.from('companies').select('*');
+        if (cos) {
+          setCompanies(cos.map(c => ({
+            ...c,
+            portalHero: c.portal_hero,
+            primaryColor: c.primary_color
+          })));
         }
-      } catch (error) {
-        console.warn("Supabase no disponible o tablas no creadas. Operando con datos locales.");
+        
+        const { data: usrs } = await supabase.from('users').select('*');
+        if (usrs) {
+          setUsers(usrs.map(u => ({
+            ...u,
+            companyId: u.company_id,
+            sedeIds: u.sede_ids
+          })));
+        }
+      } catch (e) {
+        console.error("Fetch Error:", e);
+      } finally {
+        setIsLoading(false);
       }
     };
-
-    fetchData();
+    fetchGlobalData();
   }, []);
 
-  const handleUpdateSede = async (sede: Sede) => {
-    setSedes(prev => prev.map(s => s.id === sede.id ? sede : s));
-    try {
-      await supabase
-        .from('sedes')
-        .update({
-          name: sede.name,
-          address: sede.address,
-          phone: sede.phone,
-          whatsapp: sede.whatsapp,
-          availability: sede.availability
-        })
-        .eq('id', sede.id);
-    } catch (e) {
-      console.error("Error al sincronizar con Supabase:", e);
-    }
+  useEffect(() => {
+    if (!currentCompanyId) return;
+
+    const fetchBusinessData = async () => {
+      const { data: sd } = await supabase.from('sedes').select('*').eq('company_id', currentCompanyId);
+      setSedes(sd ? sd.map(s => ({ ...s, companyId: s.company_id })) : []);
+
+      const { data: pts } = await supabase.from('patients').select('*').eq('company_id', currentCompanyId);
+      setPatients(pts ? pts.map(p => ({ ...p, companyId: p.company_id, documentId: p.document_id, birthDate: p.birth_date })) : []);
+
+      const { data: apts } = await supabase.from('appointments').select('*').eq('company_id', currentCompanyId);
+      setAppointments(apts ? apts.map(a => ({ 
+        ...a, 
+        companyId: a.company_id, 
+        patientName: a.patient_name, 
+        patientPhone: a.patient_phone, 
+        patientDni: a.patient_dni, 
+        patientId: a.patient_id, 
+        serviceId: a.service_id, 
+        sedeId: a.sede_id, 
+        professionalId: a.professional_id, 
+        bookingCode: a.booking_code 
+      })) : []);
+
+      const { data: profs } = await supabase.from('professionals').select('*').eq('company_id', currentCompanyId);
+      setProfessionals(profs ? profs.map(p => ({ ...p, companyId: p.company_id, sedeIds: p.sede_ids, userId: p.user_id })) : []);
+    };
+
+    fetchBusinessData();
+  }, [currentCompanyId]);
+
+  const handleAddCompany = async (company: Company) => {
+    const payload = { id: company.id, name: company.name, logo: company.logo, portal_hero: company.portalHero, primary_color: company.primaryColor, active: company.active };
+    const { data } = await supabase.from('companies').insert([payload]).select();
+    if (data) setCompanies(prev => [...prev, { ...data[0], portalHero: data[0].portal_hero, primaryColor: data[0].primary_color }]);
+  };
+
+  const handleUpdateCompany = async (company: Company) => {
+    const payload = { name: company.name, logo: company.logo, portal_hero: company.portalHero, primary_color: company.primaryColor, active: company.active };
+    await supabase.from('companies').update(payload).eq('id', company.id);
+    setCompanies(prev => prev.map(c => c.id === company.id ? company : c));
+  };
+
+  const handleAddUser = async (user: User) => {
+    const payload = { id: user.id, name: user.name, email: user.email, role: user.role, company_id: user.companyId, sede_ids: user.sedeIds, avatar: user.avatar };
+    const { data } = await supabase.from('users').insert([payload]).select();
+    if (data) setUsers(prev => [...prev, { ...data[0], companyId: data[0].company_id, sedeIds: data[0].sede_ids }]);
   };
 
   const handleAddSede = async (sede: Sede) => {
-    try {
-      const { data, error } = await supabase
-        .from('sedes')
-        .insert([{
-          company_id: currentCompanyId,
-          name: sede.name,
-          address: sede.address,
-          phone: sede.phone,
-          whatsapp: sede.whatsapp,
-          availability: sede.availability
-        }])
-        .select();
+    const payload = { ...sede, company_id: currentCompanyId };
+    delete (payload as any).companyId;
+    const { data } = await supabase.from('sedes').insert([payload]).select();
+    if (data) setSedes(prev => [...prev, { ...data[0], companyId: data[0].company_id }]);
+  };
 
-      if (data) {
-        const newSede: Sede = {
-          id: data[0].id,
-          companyId: data[0].company_id,
-          name: data[0].name,
-          address: data[0].address,
-          phone: data[0].phone,
-          whatsapp: data[0].whatsapp,
-          availability: data[0].availability
-        };
-        setSedes(prev => [...prev, newSede]);
-      }
-    } catch (error) {
-      console.error("Error al crear sede en Supabase, usando ID local temporal.");
-      const tempSede = { ...sede, id: 'temp-' + Date.now() };
-      setSedes(prev => [...prev, tempSede]);
-    }
+  const handleUpdateSede = async (sede: Sede) => {
+    const payload = { ...sede, company_id: sede.companyId };
+    delete (payload as any).companyId;
+    await supabase.from('sedes').update(payload).eq('id', sede.id);
+    setSedes(prev => prev.map(s => s.id === sede.id ? sede : s));
+  };
+
+  const handleAddPatient = async (patient: Patient) => {
+    const payload = { id: patient.id, name: patient.name, email: patient.email, phone: patient.phone, document_id: patient.documentId, birth_date: patient.birthDate, history: patient.history, company_id: currentCompanyId };
+    const { data } = await supabase.from('patients').insert([payload]).select();
+    if (data) setPatients(prev => [...prev, { ...data[0], companyId: data[0].company_id, documentId: data[0].document_id, birthDate: data[0].birth_date }]);
+  };
+
+  const handleAddAppointment = async (apt: Appointment) => {
+    const payload = { id: apt.id, patient_name: apt.patientName, patient_phone: apt.patientPhone, patient_dni: apt.patientDni, patient_id: apt.patientId, service_id: apt.serviceId, sede_id: apt.sedeId, professional_id: apt.professionalId, date: apt.date, time: apt.time, status: apt.status, notes: apt.notes, booking_code: apt.bookingCode, company_id: currentCompanyId };
+    await supabase.from('appointments').insert([payload]);
+    setAppointments(prev => [...prev, apt]);
+  };
+
+  const handleUpdateAppointment = async (apt: Appointment) => {
+    const payload = { patient_name: apt.patientName, status: apt.status, notes: apt.notes };
+    await supabase.from('appointments').update(payload).eq('id', apt.id);
+    setAppointments(prev => prev.map(a => a.id === apt.id ? apt : a));
   };
 
   const handleLogin = (role: UserRole) => {
-    const user = users.find(u => u.role === role) || users[1];
+    const user = users.find(u => u.role === role);
+    if (!user) return alert("Acceso no encontrado en la base de datos.");
     setCurrentUser(user);
-    const targetView = role === UserRole.SUPER_ADMIN ? 'saas-admin' : 'dashboard';
-    setViewState(prev => ({ ...prev, currentView: targetView }));
+    const targetId = user.companyId || (companies.length > 0 ? companies[0].id : '');
+    setCurrentCompanyId(targetId);
+    setViewState({ currentView: role === UserRole.SUPER_ADMIN ? 'saas-admin' : 'dashboard' });
   };
 
   const handleViewChange = (view: ViewState['currentView']) => {
@@ -137,106 +149,62 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    const contextApts = appointments.filter(a => a.companyId === currentCompanyId);
-    const contextPatients = patients.filter(p => p.companyId === currentCompanyId);
-    const contextSedes = sedes.filter(s => s.companyId === currentCompanyId);
-    const contextProfs = professionals.filter(p => p.companyId === currentCompanyId);
+    if (isLoading) return <div className="h-screen flex flex-col items-center justify-center font-bold text-brand-navy gap-4">
+      <div className="w-12 h-12 border-4 border-brand-secondary border-t-transparent rounded-full animate-spin"></div>
+      Sincronizando Ecosistema Bee...
+    </div>;
 
     switch (viewState.currentView) {
-      case 'dashboard':
-        return <Dashboard appointments={contextApts} onNavigate={handleViewChange} />;
-      case 'appointments':
-        return <AppointmentManager 
-          appointments={contextApts}
-          patients={contextPatients}
-          sedes={contextSedes}
-          onUpdateAppointment={(a) => setAppointments(appointments.map(old => old.id === a.id ? a : old))}
-          onAddAppointment={(a) => setAppointments([...appointments, a])}
-          onStartClinicalSession={(id) => {
-            setAppointments(appointments.map(a => a.id === id ? {...a, status: AppointmentStatus.ATTENDED} : a));
-            setViewState(prev => ({ ...prev, currentView: 'clinical-record', activeAppointmentId: id }));
-          }}
-          onAddPatient={(p) => setPatients([...patients, {...p, companyId: currentCompanyId}])}
-        />;
-      case 'patients':
-        return <PatientDirectory 
-          patients={contextPatients} 
-          onAddPatient={(p) => setPatients([...patients, {...p, companyId: currentCompanyId}])}
-          onAddHistoryEntry={(pid, e) => setPatients(patients.map(p => p.id === pid ? {...p, history: [e, ...p.history]} : p))}
-          onScheduleSessions={(apts) => setAppointments([...appointments, ...apts])}
-          sedes={contextSedes}
-          professionals={contextProfs}
-        />;
-      case 'schedules':
-        return <ScheduleManager 
-          sedes={contextSedes} 
-          onUpdateSede={handleUpdateSede} 
-          onAddSede={handleAddSede} 
-        />;
-      case 'saas-admin':
-        return <SaasAdmin 
-            companies={companies} 
-            onAddCompany={(c) => setCompanies([...companies, c])}
-            onSelectCompany={(id) => { setCurrentCompanyId(id); setViewState(prev => ({...prev, currentView: 'dashboard'})); }}
-            userRole={currentUser?.role}
-            currentCompanyId={currentCompanyId}
-        />;
+      case 'dashboard': return <Dashboard appointments={appointments} onNavigate={handleViewChange} />;
+      case 'appointments': return <AppointmentManager appointments={appointments} patients={patients} sedes={sedes} onUpdateAppointment={handleUpdateAppointment} onAddAppointment={handleAddAppointment} onStartClinicalSession={(id) => setViewState({ ...viewState, currentView: 'clinical-record', activeAppointmentId: id })} onAddPatient={handleAddPatient} />;
+      case 'patients': return <PatientDirectory patients={patients} onAddPatient={handleAddPatient} onAddHistoryEntry={(pid, e) => {
+          const p = patients.find(it => it.id === pid);
+          if(p) {
+            const updated = {...p, history: [e, ...p.history]};
+            supabase.from('patients').update({ history: updated.history }).eq('id', pid).then(() => setPatients(patients.map(it => it.id === pid ? updated : it)));
+          }
+      }} onScheduleSessions={(apts) => apts.forEach(handleAddAppointment)} sedes={sedes} professionals={professionals} />;
+      case 'schedules': return <ScheduleManager sedes={sedes} onUpdateSede={handleUpdateSede} onAddSede={handleAddSede} />;
+      case 'saas-admin': return <SaasAdmin companies={companies} users={users} sedes={sedes} onAddCompany={handleAddCompany} onAddUser={handleAddUser} onSelectCompany={(id) => { setCurrentCompanyId(id); setViewState({ currentView: 'dashboard' }); }} userRole={currentUser?.role} currentCompanyId={currentCompanyId} onUpdateCompany={handleUpdateCompany} />;
       case 'clinical-record':
         const currentApt = appointments.find(a => a.id === viewState.activeAppointmentId);
-        return (
-          <ClinicalRecordForm 
-            appointment={currentApt!} 
-            onClose={() => handleViewChange('appointments')}
-            onSaveRecord={(pid, e) => setPatients(patients.map(p => p.id === pid ? {...p, history: [e, ...p.history]} : p))}
-            onScheduleSessions={(apts) => setAppointments([...appointments, ...apts])}
-          />
-        );
-      default:
-        return <Dashboard appointments={contextApts} onNavigate={handleViewChange} />;
+        return <ClinicalRecordForm appointment={currentApt!} onClose={() => handleViewChange('appointments')} onSaveRecord={(pid, e) => {
+            const p = patients.find(it => it.id === pid);
+            if(p) {
+              const updated = {...p, history: [e, ...p.history]};
+              supabase.from('patients').update({ history: updated.history }).eq('id', pid).then(() => setPatients(patients.map(it => it.id === pid ? updated : it)));
+            }
+        }} onScheduleSessions={(apts) => apts.forEach(handleAddAppointment)} />;
+      default: return <Dashboard appointments={appointments} onNavigate={handleViewChange} />;
     }
   };
 
   if (viewState.currentView === 'login') return <Login onLogin={handleLogin} />;
   
   if (viewState.currentView === 'portal') {
-    return <PatientPortal 
-      company={companies.find(c => c.id === currentCompanyId) || companies[0]}
-      sedes={sedes.filter(s => s.companyId === currentCompanyId)}
-      onBack={() => handleViewChange('dashboard')} 
-      onAppointmentCreated={(apt) => setAppointments([...appointments, {...apt, companyId: currentCompanyId}])}
-    />;
+    const comp = companies.find(c => c.id === currentCompanyId) || companies[0];
+    if (!comp) return <div>Cargando Portal...</div>;
+    return <PatientPortal company={comp} sedes={sedes} onBack={() => handleViewChange('dashboard')} onAppointmentCreated={handleAddAppointment} />;
   }
 
   return (
     <div className="min-h-screen bg-brand-bg flex font-inter overflow-x-hidden">
-      <Sidebar 
-        currentView={viewState.currentView} 
-        onViewChange={handleViewChange} 
-        userRole={currentUser?.role} 
-      />
-      
+      <Sidebar currentView={viewState.currentView} onViewChange={handleViewChange} userRole={currentUser?.role} />
       <div className="flex-1 ml-64 min-h-screen flex flex-col transition-all duration-300">
         <header className="bg-white/70 backdrop-blur-md sticky top-0 z-40 px-10 py-5 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm">
-               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-               <span className="text-slate-500 text-[9px] font-bold uppercase tracking-[0.2em]">{companies.find(c => c.id === currentCompanyId)?.name}</span>
-            </div>
+          <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm">
+             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+             <span className="text-slate-500 text-[9px] font-bold uppercase tracking-[0.2em]">{companies.find(c => c.id === currentCompanyId)?.name || 'Ecosistema Global'}</span>
           </div>
           <div className="flex items-center gap-3">
              <div className="text-right">
-                <p className="text-xs font-bold text-brand-navy">{currentUser?.name}</p>
-                <p className="text-[9px] font-bold text-slate-400 uppercase">{currentUser?.role}</p>
+                <p className="text-xs font-bold text-brand-navy">{currentUser?.name || 'Cargando...'}</p>
+                <p className="text-[9px] font-bold text-slate-400 uppercase">{currentUser?.role || 'User'}</p>
              </div>
-             <div className="w-10 h-10 rounded-xl bg-slate-200 border-2 border-white shadow-md overflow-hidden">
-                <img src={currentUser?.avatar || `https://i.pravatar.cc/150?u=${currentUser?.id}`} alt="Avatar" className="w-full h-full object-cover" />
-             </div>
+             <img src={currentUser?.avatar || `https://i.pravatar.cc/150?u=${currentUser?.id || 'default'}`} className="w-10 h-10 rounded-xl bg-slate-200 border-2 border-white shadow-md object-cover" />
           </div>
         </header>
-
-        <main className="p-8 lg:p-12 max-w-[1500px] mx-auto w-full flex-1">
-          {renderContent()}
-        </main>
+        <main className="p-8 lg:p-12 max-w-[1500px] mx-auto w-full flex-1">{renderContent()}</main>
       </div>
     </div>
   );

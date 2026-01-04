@@ -1,18 +1,13 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Función auxiliar para obtener la instancia de AI de forma segura
-const getAI = () => {
-  const apiKey = (window as any).process?.env?.API_KEY || "";
-  return new GoogleGenAI({ apiKey });
-};
-
 /**
  * Genera un resumen profesional de notas clínicas.
  */
 export const summarizeClinicalNotes = async (notes: string) => {
   try {
-    const ai = getAI();
+    // Correct initialization using process.env.API_KEY directly as per guidelines.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Resume de forma profesional y concisa las siguientes notas clínicas de un paciente. Enfócate estrictamente en hallazgos, diagnóstico y plan de tratamiento: "${notes}"`,
@@ -33,7 +28,8 @@ export const summarizeClinicalNotes = async (notes: string) => {
  */
 export const suggestDiagnosis = async (findings: string) => {
   try {
-    const ai = getAI();
+    // Correct initialization using process.env.API_KEY directly.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: `Analiza los siguientes hallazgos clínicos: "${findings}". Proporciona una lista de posibles diagnósticos diferenciales y sugiere los servicios clínicos más adecuados. Responde exclusivamente en JSON.`,
@@ -58,7 +54,8 @@ export const suggestDiagnosis = async (findings: string) => {
           },
           required: ["suggestions", "recommendedService"]
         },
-        thinkingConfig: { thinkingBudget: 8000 }
+        // Max budget for gemini-3-pro-preview for complex reasoning tasks.
+        thinkingConfig: { thinkingBudget: 32768 }
       }
     });
     
