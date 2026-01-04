@@ -34,6 +34,16 @@ export interface User {
   avatar?: string;
 }
 
+export interface TimeInterval {
+  start: string;
+  end: string;
+}
+
+export interface DayAvailability {
+  isOpen: boolean;
+  intervals: TimeInterval[];
+}
+
 export interface Sede {
   id: string;
   name: string;
@@ -41,6 +51,7 @@ export interface Sede {
   phone: string;
   whatsapp: string;
   companyId: string;
+  availability?: Record<string, DayAvailability>;
 }
 
 export interface Professional {
