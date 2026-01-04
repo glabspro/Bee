@@ -13,6 +13,7 @@ import StaffManagement from './components/StaffManagement';
 import Login from './components/Login';
 import { Bell, X, Check, Calendar, UserPlus, Clock } from 'lucide-react';
 import { MOCK_PATIENTS as INITIAL_PATIENTS, INITIAL_SEDES, MOCK_PROFESSIONALS } from './constants';
+import { supabase } from './services/supabaseClient';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -28,35 +29,12 @@ const App: React.FC = () => {
         portalHero: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2053',
         primaryColor: '#714B67',
         active: true
-    },
-    {
-      id: 'dent-pro',
-      name: 'Dental Pro Network',
-      logo: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=200',
-      portalHero: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=2053',
-      primaryColor: '#017E84',
-      active: true
     }
   ]);
 
   const [currentCompanyId, setCurrentCompanyId] = useState('bee-main');
-  const [sedes, setSedes] = useState<Sede[]>(INITIAL_SEDES.map(s => ({...s, companyId: 'bee-main'})));
-  const [appointments, setAppointments] = useState<Appointment[]>([
-    {
-      id: 'a1',
-      patientName: 'Lucía Méndez',
-      patientPhone: '555-5678',
-      serviceId: 's1',
-      sedeId: 'sede1',
-      professionalId: 'p1',
-      date: new Date().toISOString().split('T')[0],
-      time: '10:00',
-      status: AppointmentStatus.CONFIRMED,
-      bookingCode: 'BEE-X9J',
-      companyId: 'bee-main'
-    }
-  ]);
-
+  const [sedes, setSedes] = useState<Sede[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [patients, setPatients] = useState<Patient[]>(INITIAL_PATIENTS.map(p => ({...p, companyId: 'bee-main'})));
   const [professionals, setProfessionals] = useState<Professional[]>(MOCK_PROFESSIONALS.map(p => ({...p, companyId: 'bee-main', userId: 'u-1'})));
   const [users, setUsers] = useState<User[]>([
@@ -64,68 +42,99 @@ const App: React.FC = () => {
     { id: 'u-1', name: 'Dr. Admin Principal', email: 'admin@bee.com', role: UserRole.ADMIN, companyId: 'bee-main' } 
   ]);
 
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [showNotifMenu, setShowNotifMenu] = useState(false);
-  const notifRef = useRef<HTMLDivElement>(null);
-
-  const currentCompany = companies.find(c => c.id === currentCompanyId) || companies[0];
-
+  // --- CARGA DE DATOS DESDE SUPABASE ---
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
-        setShowNotifMenu(false);
+    const fetchData = async () => {
+      try {
+        const { data: sedesData, error: sedesError } = await supabase
+          .from('sedes')
+          .select('*');
+        
+        if (sedesError) throw sedesError;
+
+        if (sedesData && sedesData.length > 0) {
+          const mappedSedes: Sede[] = sedesData.map(s => ({
+             id: s.id,
+             companyId: s.company_id,
+             name: s.name,
+             address: s.address,
+             phone: s.phone,
+             whatsapp: s.whatsapp,
+             availability: s.availability
+          }));
+          setSedes(mappedSedes);
+        } else {
+          setSedes(INITIAL_SEDES.map(s => ({...s, companyId: 'bee-main'})));
+        }
+      } catch (error) {
+        console.warn("Supabase no disponible o tablas no creadas. Cargando datos locales de respaldo.");
+        setSedes(INITIAL_SEDES.map(s => ({...s, companyId: 'bee-main'})));
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    fetchData();
   }, []);
 
-  const addNotification = (notif: AppNotification) => {
-    setNotifications(prev => [notif, ...prev]);
+  const handleUpdateSede = async (sede: Sede) => {
+    setSedes(prev => prev.map(s => s.id === sede.id ? sede : s));
+    try {
+      await supabase
+        .from('sedes')
+        .update({
+          name: sede.name,
+          address: sede.address,
+          phone: sede.phone,
+          whatsapp: sede.whatsapp,
+          availability: sede.availability
+        })
+        .eq('id', sede.id);
+    } catch (e) {
+      console.error("Error al sincronizar con Supabase:", e);
+    }
+  };
+
+  const handleAddSede = async (sede: Sede) => {
+    try {
+      const { data, error } = await supabase
+        .from('sedes')
+        .insert([{
+          company_id: currentCompanyId,
+          name: sede.name,
+          address: sede.address,
+          phone: sede.phone,
+          whatsapp: sede.whatsapp,
+          availability: sede.availability
+        }])
+        .select();
+
+      if (data) {
+        const newSede: Sede = {
+          id: data[0].id,
+          companyId: data[0].company_id,
+          name: data[0].name,
+          address: data[0].address,
+          phone: data[0].phone,
+          whatsapp: data[0].whatsapp,
+          availability: data[0].availability
+        };
+        setSedes(prev => [...prev, newSede]);
+      }
+    } catch (error) {
+      console.error("Error al crear sede en Supabase, usando ID local temporal.");
+      const tempSede = { ...sede, id: 'temp-' + Date.now() };
+      setSedes(prev => [...prev, tempSede]);
+    }
   };
 
   const handleLogin = (role: UserRole) => {
     const user = users.find(u => u.role === role) || users[1];
     setCurrentUser(user);
-    // Si es super admin, lo enviamos a la vista de SaaS Admin por defecto
     const targetView = role === UserRole.SUPER_ADMIN ? 'saas-admin' : 'dashboard';
     setViewState(prev => ({ ...prev, currentView: targetView }));
   };
 
   const handleViewChange = (view: ViewState['currentView']) => {
     setViewState(prev => ({ ...prev, currentView: view }));
-  };
-
-  const addAppointment = (newApt: Appointment, fromPortal = false) => {
-    setAppointments(prev => [...prev, newApt]);
-    if (fromPortal) {
-      addNotification({
-        id: 'notif-' + Math.random().toString(36).substr(2, 5),
-        title: 'Nueva Cita Portal',
-        message: `${newApt.patientName} ha agendado vía Web.`,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        read: false,
-        type: 'NEW_PORTAL',
-        appointmentId: newApt.id,
-        companyId: newApt.companyId
-      });
-    }
-  };
-
-  const addHistoryEntry = (patientId: string, entry: ClinicalHistoryEntry) => {
-    setPatients(prev => prev.map(p => 
-      p.id === patientId ? { ...p, history: [entry, ...p.history] } : p
-    ));
-  };
-
-  const handleUpdateCompany = (updatedCompany: Company) => {
-    setCompanies(prev => {
-        const exists = prev.find(c => c.id === updatedCompany.id);
-        if (exists) {
-            return prev.map(c => c.id === updatedCompany.id ? updatedCompany : c);
-        }
-        return [...prev, updatedCompany];
-    });
   };
 
   const renderContent = () => {
@@ -143,7 +152,7 @@ const App: React.FC = () => {
           patients={contextPatients}
           sedes={contextSedes}
           onUpdateAppointment={(a) => setAppointments(appointments.map(old => old.id === a.id ? a : old))}
-          onAddAppointment={addAppointment}
+          onAddAppointment={(a) => setAppointments([...appointments, a])}
           onStartClinicalSession={(id) => {
             setAppointments(appointments.map(a => a.id === id ? {...a, status: AppointmentStatus.ATTENDED} : a));
             setViewState(prev => ({ ...prev, currentView: 'clinical-record', activeAppointmentId: id }));
@@ -154,32 +163,24 @@ const App: React.FC = () => {
         return <PatientDirectory 
           patients={contextPatients} 
           onAddPatient={(p) => setPatients([...patients, {...p, companyId: currentCompanyId}])}
-          onAddHistoryEntry={addHistoryEntry}
+          onAddHistoryEntry={(pid, e) => setPatients(patients.map(p => p.id === pid ? {...p, history: [e, ...p.history]} : p))}
           onScheduleSessions={(apts) => setAppointments([...appointments, ...apts])}
           sedes={contextSedes}
           professionals={contextProfs}
         />;
-      case 'staff-management':
-        return <StaffManagement 
-          professionals={contextProfs}
-          users={users.filter(u => u.companyId === currentCompanyId)}
-          sedes={contextSedes}
-          onAddProfessional={(p) => setProfessionals([...professionals, {...p, companyId: currentCompanyId}])}
-          onAddUser={(u) => setUsers([...users, {...u, companyId: currentCompanyId}])}
+      case 'schedules':
+        return <ScheduleManager 
+          sedes={contextSedes} 
+          onUpdateSede={handleUpdateSede} 
+          onAddSede={handleAddSede} 
         />;
       case 'saas-admin':
         return <SaasAdmin 
             companies={companies} 
-            onAddCompany={handleUpdateCompany}
+            onAddCompany={(c) => setCompanies([...companies, c])}
             onSelectCompany={(id) => { setCurrentCompanyId(id); setViewState(prev => ({...prev, currentView: 'dashboard'})); }}
             userRole={currentUser?.role}
             currentCompanyId={currentCompanyId}
-        />;
-      case 'schedules':
-        return <ScheduleManager 
-          sedes={contextSedes} 
-          onUpdateSede={(s) => setSedes(sedes.map(old => old.id === s.id ? s : old))} 
-          onAddSede={(s) => setSedes([...sedes, {...s, companyId: currentCompanyId}])} 
         />;
       case 'clinical-record':
         const currentApt = appointments.find(a => a.id === viewState.activeAppointmentId);
@@ -187,7 +188,7 @@ const App: React.FC = () => {
           <ClinicalRecordForm 
             appointment={currentApt!} 
             onClose={() => handleViewChange('appointments')}
-            onSaveRecord={addHistoryEntry}
+            onSaveRecord={(pid, e) => setPatients(patients.map(p => p.id === pid ? {...p, history: [e, ...p.history]} : p))}
             onScheduleSessions={(apts) => setAppointments([...appointments, ...apts])}
           />
         );
@@ -200,10 +201,10 @@ const App: React.FC = () => {
   
   if (viewState.currentView === 'portal') {
     return <PatientPortal 
-      company={currentCompany}
+      company={companies.find(c => c.id === currentCompanyId) || companies[0]}
       sedes={sedes.filter(s => s.companyId === currentCompanyId)}
       onBack={() => handleViewChange('dashboard')} 
-      onAppointmentCreated={(apt) => addAppointment({...apt, companyId: currentCompanyId}, true)}
+      onAppointmentCreated={(apt) => setAppointments([...appointments, {...apt, companyId: currentCompanyId}])}
     />;
   }
 
@@ -220,32 +221,17 @@ const App: React.FC = () => {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm">
                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-               <span className="text-slate-500 text-[9px] font-bold uppercase tracking-[0.2em]">{currentCompany.name}</span>
+               <span className="text-slate-500 text-[9px] font-bold uppercase tracking-[0.2em]">{companies.find(c => c.id === currentCompanyId)?.name}</span>
             </div>
-            {currentUser?.role === UserRole.SUPER_ADMIN && (
-              <div className="bg-brand-navy text-white px-4 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest border border-white/10 shadow-lg">
-                Modo SaaS Admin
-              </div>
-            )}
           </div>
-          
-          <div className="flex items-center gap-5">
-            <div className="relative" ref={notifRef}>
-              <button onClick={() => setShowNotifMenu(!showNotifMenu)} className="relative p-2.5 rounded-xl text-slate-400 hover:text-brand-secondary hover:bg-slate-50 transition-all">
-                <Bell size={20} />
-                {notifications.filter(n => !n.read).length > 0 && <span className="absolute top-1 right-1 w-5 h-5 bg-brand-accent text-white text-[10px] font-bold rounded-full border-2 border-white flex items-center justify-center animate-bounce">{notifications.filter(n => !n.read).length}</span>}
-              </button>
-            </div>
-            <div className="h-8 w-[1px] bg-slate-100 mx-1" />
-            <div className="flex items-center gap-3 group cursor-pointer" onClick={() => handleViewChange('dashboard')}>
-               <div className="text-right">
-                  <p className="text-xs font-bold text-brand-navy">{currentUser?.name || 'Admin'}</p>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{currentUser?.role}</p>
-               </div>
-               <div className="w-10 h-10 rounded-xl bg-slate-200 border-2 border-white shadow-md overflow-hidden group-hover:border-brand-secondary transition-all">
-                  <img src={currentUser?.avatar || `https://i.pravatar.cc/150?u=${currentUser?.id}`} alt="Avatar" className="w-full h-full object-cover" />
-               </div>
-            </div>
+          <div className="flex items-center gap-3">
+             <div className="text-right">
+                <p className="text-xs font-bold text-brand-navy">{currentUser?.name}</p>
+                <p className="text-[9px] font-bold text-slate-400 uppercase">{currentUser?.role}</p>
+             </div>
+             <div className="w-10 h-10 rounded-xl bg-slate-200 border-2 border-white shadow-md overflow-hidden">
+                <img src={currentUser?.avatar || `https://i.pravatar.cc/150?u=${currentUser?.id}`} alt="Avatar" className="w-full h-full object-cover" />
+             </div>
           </div>
         </header>
 
