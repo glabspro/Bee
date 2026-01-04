@@ -17,7 +17,8 @@ import {
   CalendarOff,
   Layout,
   Loader2,
-  Building
+  Building,
+  Hash
 } from 'lucide-react';
 import { Sede, DayAvailability, TimeInterval } from '../types';
 
@@ -29,19 +30,22 @@ interface ScheduleManagerProps {
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-const PRESETS = [
-  { name: 'Mañana', intervals: [{ start: '08:00', end: '13:00' }] },
-  { name: 'Tarde', intervals: [{ start: '14:00', end: '19:00' }] },
-  { name: 'Partido', intervals: [{ start: '09:00', end: '13:00' }, { start: '15:00', end: '19:00' }] },
-  { name: 'Completo', intervals: [{ start: '08:00', end: '18:00' }] }
-];
+const DEFAULT_AVAILABILITY: Record<string, DayAvailability> = {
+  'Lunes': { isOpen: true, intervals: [{ start: '09:00', end: '18:00' }] },
+  'Martes': { isOpen: true, intervals: [{ start: '09:00', end: '18:00' }] },
+  'Miércoles': { isOpen: true, intervals: [{ start: '09:00', end: '18:00' }] },
+  'Jueves': { isOpen: true, intervals: [{ start: '09:00', end: '18:00' }] },
+  'Viernes': { isOpen: true, intervals: [{ start: '09:00', end: '18:00' }] },
+  'Sábado': { isOpen: false, intervals: [] },
+  'Domingo': { isOpen: false, intervals: [] },
+};
 
 const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, onAddSede }) => {
   const [selectedSede, setSelectedSede] = useState<Sede | null>(null);
   const [showSedeModal, setShowSedeModal] = useState<'edit' | 'add' | null>(null);
   const [sedeForm, setSedeForm] = useState<Partial<Sede>>({ name: '', address: '', phone: '', whatsapp: '' });
   const [isSaving, setIsSaving] = useState(false);
-  const [localAvailability, setLocalAvailability] = useState<Record<string, DayAvailability>>({});
+  const [localAvailability, setLocalAvailability] = useState<Record<string, DayAvailability>>(DEFAULT_AVAILABILITY);
 
   useEffect(() => {
     if (sedes.length > 0 && !selectedSede) {
@@ -50,22 +54,25 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
   }, [sedes, selectedSede]);
 
   useEffect(() => {
-    if (selectedSede) {
+    if (selectedSede && showSedeModal !== 'add') {
       const initial: Record<string, DayAvailability> = {};
       DAYS.forEach(day => {
-        initial[day] = selectedSede.availability?.[day] || {
-          isOpen: day !== 'Domingo',
-          intervals: [{ start: '09:00', end: '18:00' }]
-        };
+        initial[day] = selectedSede.availability?.[day] || DEFAULT_AVAILABILITY[day];
       });
       setLocalAvailability(initial);
     }
-  }, [selectedSede]);
+  }, [selectedSede, showSedeModal]);
+
+  const handleOpenAddModal = () => {
+    setSedeForm({ name: '', address: '', phone: '', whatsapp: '' });
+    setLocalAvailability(DEFAULT_AVAILABILITY);
+    setShowSedeModal('add');
+  };
 
   const handleToggleDay = (day: string) => {
     setLocalAvailability(prev => ({
       ...prev,
-      [day]: { ...prev[day], isOpen: !prev[day].isOpen }
+      [day]: { ...prev[day], isOpen: !prev[day].isOpen, intervals: prev[day].intervals.length > 0 ? prev[day].intervals : [{ start: '09:00', end: '18:00' }] }
     }));
   };
 
@@ -84,13 +91,6 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
         }
       };
     });
-  };
-
-  const applyPreset = (day: string, intervals: TimeInterval[]) => {
-    setLocalAvailability(prev => ({
-      ...prev,
-      [day]: { isOpen: true, intervals: [...intervals] }
-    }));
   };
 
   const removeInterval = (day: string, index: number) => {
@@ -125,7 +125,6 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
       newAvail[day] = JSON.parse(JSON.stringify(sourceConfig));
     });
     setLocalAvailability(newAvail);
-    alert(`Copiada la configuración de ${sourceDay} a los días laborables.`);
   };
 
   const handleSaveAll = async () => {
@@ -144,18 +143,48 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
 
   const handleCreateSede = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newSede: Sede = {
-      id: 'sede-' + Math.random().toString(36).substr(2, 5),
-      name: sedeForm.name || 'Nueva Sede',
-      address: sedeForm.address || '',
-      phone: sedeForm.phone || '',
-      whatsapp: sedeForm.whatsapp || '',
-      companyId: '', // App.tsx maneja esto
-      availability: localAvailability
-    };
-    await onAddSede(newSede);
-    setShowSedeModal(null);
-    setSedeForm({ name: '', address: '', phone: '', whatsapp: '' });
+    setIsSaving(true);
+    try {
+      const newSede: Sede = {
+        id: 'sede-' + Math.random().toString(36).substr(2, 5),
+        name: sedeForm.name || 'Nueva Sede',
+        address: sedeForm.address || '',
+        phone: sedeForm.phone || '',
+        whatsapp: sedeForm.whatsapp || '',
+        companyId: '', // App.tsx gestiona esto
+        availability: localAvailability
+      };
+      await onAddSede(newSede);
+      setShowSedeModal(null);
+      setSedeForm({ name: '', address: '', phone: '', whatsapp: '' });
+    } catch (err) {
+      console.error(err);
+      alert("Hubo un error al crear la sede.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditSede = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSede) return;
+    setIsSaving(true);
+    try {
+      const updatedSede = { 
+        ...selectedSede, 
+        name: sedeForm.name!,
+        address: sedeForm.address!,
+        phone: sedeForm.phone!,
+        whatsapp: sedeForm.whatsapp!
+      };
+      await onUpdateSede(updatedSede);
+      setSelectedSede(updatedSede);
+      setShowSedeModal(null);
+    } catch (err) {
+      alert("Error al actualizar los datos de la sede.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (sedes.length === 0 && !showSedeModal) {
@@ -167,7 +196,7 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
         <h3 className="text-3xl font-ubuntu font-bold text-brand-navy">No hay sedes registradas</h3>
         <p className="text-slate-400 mt-4 max-w-md font-medium">Configura tu primer centro de atención para comenzar a gestionar horarios y citas.</p>
         <button 
-          onClick={() => setShowSedeModal('add')}
+          onClick={handleOpenAddModal}
           className="mt-10 bg-brand-navy text-white px-10 py-4 rounded-2xl font-bold flex items-center gap-3 shadow-2xl hover:bg-brand-secondary transition-all"
         >
           <Plus size={20} /> Registrar Primera Sede
@@ -197,7 +226,7 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
         </div>
         <div className="flex gap-3">
           <button 
-            onClick={() => setShowSedeModal('add')}
+            onClick={handleOpenAddModal}
             className="flex items-center gap-2 bg-white text-brand-navy px-6 py-3 rounded-2xl font-bold border border-slate-200 hover:border-brand-secondary transition-all text-xs shadow-sm"
           >
             <Plus size={16} /> Nueva Sede
@@ -207,7 +236,7 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
             onClick={handleSaveAll}
             className="flex items-center gap-3 bg-brand-navy text-white px-8 py-3 rounded-2xl font-bold hover:shadow-2xl transition-all text-xs shadow-xl shadow-brand-navy/10 disabled:opacity-50"
           >
-            {isSaving ? 'Guardando...' : <><Save size={18} className="text-brand-secondary" /> Guardar Cambios</>}
+            {isSaving ? 'Guardando...' : <><Save size={18} className="text-brand-secondary" /> Guardar Horarios</>}
           </button>
         </div>
       </header>
@@ -250,10 +279,10 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
 
             <div className="pt-6 border-t border-slate-50 space-y-3 relative z-10">
                <div className="flex items-center gap-3 text-slate-600 text-[11px] font-bold">
-                  <Phone size={14} className="text-brand-secondary" /> {selectedSede.phone}
+                  <Phone size={14} className="text-brand-secondary" /> {selectedSede.phone || 'Sin teléfono'}
                </div>
                <div className="flex items-center gap-3 text-slate-600 text-[11px] font-bold">
-                  <MessageCircle size={14} className="text-green-500" /> WhatsApp: {selectedSede.whatsapp}
+                  <MessageCircle size={14} className="text-green-500" /> WhatsApp: {selectedSede.whatsapp || 'Sin WhatsApp'}
                </div>
             </div>
           </div>
@@ -266,7 +295,7 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
                 <Clock className="text-brand-secondary" size={20} /> Turnos de Atención
               </h3>
               <button onClick={() => copyToWorkDays('Lunes')} className="px-4 py-2 bg-slate-50 text-slate-500 text-[10px] font-bold rounded-xl hover:bg-brand-secondary/10 hover:text-brand-secondary transition-all flex items-center gap-2 uppercase tracking-widest">
-                <Copy size={12} /> Copiar Lunes
+                <Copy size={12} /> Copiar Lunes a Viernes
               </button>
             </div>
 
@@ -288,41 +317,39 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
 
                     <div className="flex-1 space-y-4">
                       {config.isOpen ? (
-                        <>
-                          <div className="flex flex-wrap gap-3">
-                            {config.intervals.map((interval, idx) => (
-                              <div key={idx} className="flex items-center gap-3 bg-white border border-slate-100 pl-4 pr-2 py-2 rounded-2xl shadow-sm hover:border-brand-secondary transition-all group animate-fade-in">
-                                <div className="flex items-center gap-2">
-                                  <input 
-                                    type="time" 
-                                    value={interval.start}
-                                    onChange={(e) => updateInterval(day, idx, 'start', e.target.value)}
-                                    className="bg-transparent border-none text-xs font-bold text-brand-navy p-0 focus:ring-0 w-16" 
-                                  />
-                                  <span className="text-slate-200 text-[10px]">—</span>
-                                  <input 
-                                    type="time" 
-                                    value={interval.end}
-                                    onChange={(e) => updateInterval(day, idx, 'end', e.target.value)}
-                                    className="bg-transparent border-none text-xs font-bold text-brand-navy p-0 focus:ring-0 w-16" 
-                                  />
-                                </div>
-                                <button 
-                                  onClick={() => removeInterval(day, idx)}
-                                  className="text-slate-300 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-all"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
+                        <div className="flex flex-wrap gap-3">
+                          {config.intervals.map((interval, idx) => (
+                            <div key={idx} className="flex items-center gap-3 bg-white border border-slate-100 pl-4 pr-2 py-2 rounded-2xl shadow-sm hover:border-brand-secondary transition-all group animate-fade-in">
+                              <div className="flex items-center gap-2">
+                                <input 
+                                  type="time" 
+                                  value={interval.start}
+                                  onChange={(e) => updateInterval(day, idx, 'start', e.target.value)}
+                                  className="bg-transparent border-none text-xs font-bold text-brand-navy p-0 focus:ring-0 w-16" 
+                                />
+                                <span className="text-slate-200 text-[10px]">—</span>
+                                <input 
+                                  type="time" 
+                                  value={interval.end}
+                                  onChange={(e) => updateInterval(day, idx, 'end', e.target.value)}
+                                  className="bg-transparent border-none text-xs font-bold text-brand-navy p-0 focus:ring-0 w-16" 
+                                />
                               </div>
-                            ))}
-                            <button 
-                              onClick={() => addInterval(day)}
-                              className="w-10 h-10 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 hover:border-brand-secondary hover:text-brand-secondary hover:bg-brand-lightSecondary transition-all"
-                            >
-                              <Plus size={20} />
-                            </button>
-                          </div>
-                        </>
+                              <button 
+                                onClick={() => removeInterval(day, idx)}
+                                className="text-slate-300 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-all"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          ))}
+                          <button 
+                            onClick={() => addInterval(day)}
+                            className="w-10 h-10 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 hover:border-brand-secondary hover:text-brand-secondary hover:bg-brand-lightSecondary transition-all"
+                          >
+                            <Plus size={20} />
+                          </button>
+                        </div>
                       ) : (
                         <div className="h-20 flex items-center border border-dashed border-slate-200 rounded-3xl justify-center bg-slate-100/30">
                            <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest flex items-center gap-2">
@@ -348,19 +375,38 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
               </h3>
               <button onClick={() => setShowSedeModal(null)} className="text-slate-300 hover:text-brand-navy p-2"><X size={24} /></button>
             </div>
-            <form onSubmit={handleCreateSede} className="p-8 space-y-6">
+            <form onSubmit={showSedeModal === 'add' ? handleCreateSede : handleEditSede} className="p-8 space-y-6">
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nombre Comercial</label>
-                  <input required className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-secondary font-bold text-brand-navy outline-none" value={sedeForm.name} onChange={e => setSedeForm({...sedeForm, name: e.target.value})} />
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                    <Building size={12} className="text-brand-secondary" /> Nombre Comercial
+                  </label>
+                  <input required className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-secondary font-bold text-brand-navy outline-none shadow-inner" value={sedeForm.name} onChange={e => setSedeForm({...sedeForm, name: e.target.value})} placeholder="Ej: Sede Central" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ubicación</label>
-                  <input required className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-secondary font-medium text-sm outline-none" value={sedeForm.address} onChange={e => setSedeForm({...sedeForm, address: e.target.value})} />
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                    <MapPin size={12} className="text-brand-primary" /> Ubicación / Dirección
+                  </label>
+                  <input required className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-secondary font-medium text-sm outline-none shadow-inner" value={sedeForm.address} onChange={e => setSedeForm({...sedeForm, address: e.target.value})} placeholder="Av. Principal 123" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                      <Phone size={12} className="text-brand-accent" /> Teléfono
+                    </label>
+                    <input required className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-secondary font-bold text-xs outline-none shadow-inner" value={sedeForm.phone} onChange={e => setSedeForm({...sedeForm, phone: e.target.value})} placeholder="01 234 5678" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                      <MessageCircle size={12} className="text-green-500" /> WhatsApp
+                    </label>
+                    <input required className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-secondary font-bold text-xs outline-none shadow-inner" value={sedeForm.whatsapp} onChange={e => setSedeForm({...sedeForm, whatsapp: e.target.value})} placeholder="51987654321" />
+                  </div>
                 </div>
               </div>
-              <button type="submit" className="w-full py-4 bg-brand-navy text-white rounded-2xl font-bold text-sm shadow-xl flex items-center justify-center gap-2">
-                <CheckCircle size={18} /> {showSedeModal === 'edit' ? 'Guardar Cambios' : 'Crear Sede'}
+              <button type="submit" disabled={isSaving} className="w-full py-5 bg-brand-navy text-white rounded-2xl font-bold text-sm shadow-xl flex items-center justify-center gap-3 hover:bg-brand-secondary transition-all disabled:opacity-50">
+                {isSaving ? <Loader2 size={20} className="animate-spin" /> : <CheckCircle size={18} />}
+                {showSedeModal === 'edit' ? 'Guardar Cambios' : 'Confirmar Creación de Sede'}
               </button>
             </form>
           </div>

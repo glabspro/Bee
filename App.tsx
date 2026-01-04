@@ -119,17 +119,31 @@ const App: React.FC = () => {
   };
 
   const handleAddSede = async (sede: Sede) => {
-    const payload = { ...sede, company_id: currentCompanyId };
-    delete (payload as any).companyId;
-    const { data } = await supabase.from('sedes').insert([payload]).select();
-    if (data) setSedes(prev => [...prev, { ...data[0], companyId: data[0].company_id }]);
+    try {
+      const payload = { ...sede, company_id: currentCompanyId };
+      delete (payload as any).companyId;
+      const { data, error } = await supabase.from('sedes').insert([payload]).select();
+      if (error) throw error;
+      if (data) setSedes(prev => [...prev, { ...data[0], companyId: data[0].company_id }]);
+    } catch (err) {
+      console.error("Supabase error creating sede:", err);
+      alert("No se pudo registrar la sede en Supabase. Verifica la conexión.");
+      throw err;
+    }
   };
 
   const handleUpdateSede = async (sede: Sede) => {
-    const payload = { ...sede, company_id: sede.companyId };
-    delete (payload as any).companyId;
-    await supabase.from('sedes').update(payload).eq('id', sede.id);
-    setSedes(prev => prev.map(s => s.id === sede.id ? sede : s));
+    try {
+      const payload = { ...sede, company_id: sede.companyId };
+      delete (payload as any).companyId;
+      const { error } = await supabase.from('sedes').update(payload).eq('id', sede.id);
+      if (error) throw error;
+      setSedes(prev => prev.map(s => s.id === sede.id ? sede : s));
+    } catch (err) {
+      console.error("Supabase error updating sede:", err);
+      alert("Error al sincronizar los cambios de la sede.");
+      throw err;
+    }
   };
 
   const handleAddPatient = async (patient: Patient) => {

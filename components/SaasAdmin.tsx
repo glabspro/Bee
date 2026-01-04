@@ -22,7 +22,10 @@ import {
   Globe,
   LayoutDashboard,
   Sparkles,
-  MousePointer2
+  MousePointer2,
+  Lock,
+  CheckCircle,
+  Copy
 } from 'lucide-react';
 import { Company, User, UserRole, Sede } from '../types';
 
@@ -52,8 +55,11 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
   const isSuperAdmin = userRole === UserRole.SUPER_ADMIN;
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState<'tenants' | 'users' | 'settings'>(isSuperAdmin ? 'tenants' : 'settings');
+  const [activeSubTab, setActiveSubTab] = useState<'tenants' | 'users' | 'settings'>('tenants');
   
+  // Pestaña interna cuando se gestiona una clínica
+  const [clinicDetailTab, setClinicDetailTab] = useState<'brand' | 'portal' | 'access'>('brand');
+
   // Estado para la clínica que se está gestionando activamente
   const [editingClinicId, setEditingClinicId] = useState<string | null>(null);
 
@@ -68,6 +74,11 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
   const editingClinic = useMemo(() => 
     companies.find(c => c.id === (editingClinicId || currentCompanyId)), 
     [companies, editingClinicId, currentCompanyId]
+  );
+
+  const clinicUsers = useMemo(() => 
+    users.filter(u => u.companyId === editingClinicId),
+    [users, editingClinicId]
   );
 
   const [brandForm, setBrandForm] = useState<Partial<Company>>({});
@@ -90,8 +101,14 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
 
   const handleManageClinic = (companyId: string) => {
     setEditingClinicId(companyId);
-    onSelectCompany?.(companyId); // Sincroniza el contexto global
-    setActiveSubTab('settings'); // Va directo a marca/configuración
+    onSelectCompany?.(companyId);
+    setClinicDetailTab('brand');
+  };
+
+  const copyPortalLink = () => {
+    const link = `bee-clinical.system/portal/${editingClinic?.id}`;
+    navigator.clipboard.writeText(link);
+    alert("Enlace copiado al portapapeles");
   };
 
   return (
@@ -100,7 +117,7 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
         <div>
           <div className="flex items-center gap-2 text-brand-secondary font-bold text-[10px] uppercase tracking-[0.3em] mb-3">
              <ShieldCheck size={14} className="text-brand-secondary" /> 
-             {isSuperAdmin ? 'Administración Global SaaS' : 'Identidad Corporativa'}
+             {isSuperAdmin ? 'Bee Global Clinical SaaS' : 'Identidad Corporativa'}
           </div>
           
           <div className="flex items-center gap-4">
@@ -118,26 +135,41 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
           </div>
         </div>
 
-        {!editingClinicId && (
-          <div className="flex bg-slate-100 p-1.5 rounded-[2rem] border border-slate-200 shadow-inner">
-             {isSuperAdmin && (
-               <>
-                  <button onClick={() => setActiveSubTab('tenants')} className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeSubTab === 'tenants' ? 'bg-white text-brand-navy shadow-sm' : 'text-slate-400'}`}>
-                    <Building2 size={14} /> Clínicas
-                  </button>
-                  <button onClick={() => setActiveSubTab('users')} className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeSubTab === 'users' ? 'bg-white text-brand-navy shadow-sm' : 'text-slate-400'}`}>
-                    <Users size={14} /> Identidades
-                  </button>
-               </>
-             )}
-             <button onClick={() => setActiveSubTab('settings')} className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeSubTab === 'settings' ? 'bg-white text-brand-navy shadow-sm' : 'text-slate-400'}`}>
-               <Palette size={14} /> Marca
-             </button>
-          </div>
-        )}
+        {/* NAVEGACIÓN DE PESTAÑAS (Vista Global vs Vista Detalle) */}
+        <div className="flex bg-slate-100 p-1.5 rounded-[2rem] border border-slate-200 shadow-inner">
+           {!editingClinicId ? (
+             <>
+                {isSuperAdmin && (
+                  <>
+                    <button onClick={() => setActiveSubTab('tenants')} className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeSubTab === 'tenants' ? 'bg-white text-brand-navy shadow-sm' : 'text-slate-400'}`}>
+                      <Building2 size={14} /> Clínicas
+                    </button>
+                    <button onClick={() => setActiveSubTab('users')} className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeSubTab === 'users' ? 'bg-white text-brand-navy shadow-sm' : 'text-slate-400'}`}>
+                      <Users size={14} /> Identidades
+                    </button>
+                  </>
+                )}
+                <button onClick={() => setActiveSubTab('settings')} className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeSubTab === 'settings' ? 'bg-white text-brand-navy shadow-sm' : 'text-slate-400'}`}>
+                  <Palette size={14} /> Marca
+                </button>
+             </>
+           ) : (
+             <>
+                <button onClick={() => setClinicDetailTab('brand')} className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${clinicDetailTab === 'brand' ? 'bg-white text-brand-navy shadow-sm' : 'text-slate-400'}`}>
+                  <Palette size={14} /> Identidad
+                </button>
+                <button onClick={() => setClinicDetailTab('portal')} className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${clinicDetailTab === 'portal' ? 'bg-white text-brand-navy shadow-sm' : 'text-slate-400'}`}>
+                  <Globe size={14} /> Portal Agenda
+                </button>
+                <button onClick={() => setClinicDetailTab('access')} className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${clinicDetailTab === 'access' ? 'bg-white text-brand-navy shadow-sm' : 'text-slate-400'}`}>
+                  <Lock size={14} /> Accesos
+                </button>
+             </>
+           )}
+        </div>
       </header>
 
-      {/* VISTA DE LISTA DE CLÍNICAS (Si no hay una seleccionada) */}
+      {/* VISTA GLOBAL: LISTA DE CLÍNICAS */}
       {isSuperAdmin && activeSubTab === 'tenants' && !editingClinicId && (
         <div className="space-y-10 px-4">
            <div className="flex justify-between items-center">
@@ -160,13 +192,12 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
                   </div>
                   <div className="p-8 text-center">
                     <h4 className="text-2xl font-ubuntu font-bold text-brand-navy">{c.name}</h4>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">{c.id}</p>
-                    
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">UUID: {c.id.toUpperCase()}</p>
                     <button 
                       onClick={() => handleManageClinic(c.id)} 
                       className="w-full mt-8 py-4 bg-brand-navy text-white rounded-[1.5rem] font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-brand-secondary transition-all shadow-lg"
                     >
-                      Gestionar Identidad <ChevronRight size={16} />
+                      Gestionar Clínica <ChevronRight size={16} />
                     </button>
                   </div>
                 </div>
@@ -175,124 +206,175 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
         </div>
       )}
 
-      {/* CENTRO DE MANDO DE CLÍNICA SELECCIONADA O TAB MARCA */}
-      {(editingClinicId || activeSubTab === 'settings') && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 px-4">
-          
-          {/* PANEL DE IDENTIDAD VISUAL */}
-          <div className="lg:col-span-7">
-            <div className="bg-white rounded-[4rem] border border-slate-100 shadow-sm p-12 space-y-12 h-full">
+      {/* VISTA DETALLE: GESTIÓN DE CLÍNICA ESPECÍFICA */}
+      {editingClinicId && (
+        <div className="px-4">
+          {clinicDetailTab === 'brand' && (
+            <div className="max-w-4xl mx-auto bg-white rounded-[4rem] border border-slate-100 shadow-sm p-12 space-y-12 animate-fade-in">
                <div className="flex items-center gap-6">
                   <div className="w-16 h-16 bg-brand-lightPrimary rounded-3xl flex items-center justify-center text-brand-primary">
                      <Palette size={32} />
                   </div>
                   <div>
-                     <h3 className="text-3xl font-ubuntu font-bold text-brand-navy">Identidad de Marca</h3>
-                     <p className="text-slate-400 font-medium">Configura cómo ven los pacientes tu clínica.</p>
+                     <h3 className="text-3xl font-ubuntu font-bold text-brand-navy">Personalización Visual</h3>
+                     <p className="text-slate-400 font-medium">Define la cara pública de tu clínica ante los pacientes.</p>
                   </div>
                </div>
 
                <form onSubmit={handleUpdateBrand} className="space-y-10">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><Type size={12} /> Nombre de la Institución</label>
-                        <input className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary font-bold text-brand-navy outline-none" value={brandForm.name || ''} onChange={e => setBrandForm({...brandForm, name: e.target.value})} />
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><Type size={12} /> Nombre Público</label>
+                        <input className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary font-bold text-brand-navy outline-none shadow-inner" value={brandForm.name || ''} onChange={e => setBrandForm({...brandForm, name: e.target.value})} />
                      </div>
                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><Palette size={12} /> Color Corporativo</label>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><Palette size={12} /> Color de Marca</label>
                         <div className="flex gap-4">
-                           <input className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary font-bold text-brand-navy outline-none" value={brandForm.primaryColor || ''} onChange={e => setBrandForm({...brandForm, primaryColor: e.target.value})} />
+                           <input className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary font-bold text-brand-navy outline-none shadow-inner" value={brandForm.primaryColor || ''} onChange={e => setBrandForm({...brandForm, primaryColor: e.target.value})} />
                            <div className="w-14 h-14 rounded-2xl border border-slate-100 shadow-inner shrink-0" style={{ backgroundColor: brandForm.primaryColor }}></div>
                         </div>
                      </div>
                   </div>
-                  
                   <div className="space-y-6">
                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><ImageIcon size={12} /> URL Logotipo (PNG/SVG)</label>
-                        <input placeholder="https://..." className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary text-xs font-medium outline-none" value={brandForm.logo || ''} onChange={e => setBrandForm({...brandForm, logo: e.target.value})} />
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><ImageIcon size={12} /> URL del Logotipo</label>
+                        <input placeholder="https://..." className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary text-xs font-medium outline-none shadow-inner" value={brandForm.logo || ''} onChange={e => setBrandForm({...brandForm, logo: e.target.value})} />
                      </div>
                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><ImageIcon size={12} /> URL Banner del Portal</label>
-                        <input placeholder="https://..." className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary text-xs font-medium outline-none" value={brandForm.portalHero || ''} onChange={e => setBrandForm({...brandForm, portalHero: e.target.value})} />
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><ImageIcon size={12} /> URL Imagen de Banner Portal</label>
+                        <input placeholder="https://..." className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary text-xs font-medium outline-none shadow-inner" value={brandForm.portalHero || ''} onChange={e => setBrandForm({...brandForm, portalHero: e.target.value})} />
                      </div>
                   </div>
-
                   <button type="submit" className="w-full py-5 bg-brand-navy text-white rounded-[2rem] font-bold flex items-center justify-center gap-3 shadow-2xl hover:bg-brand-secondary transition-all">
-                     <Save size={18} /> Sincronizar Identidad Bee
+                     <Save size={18} /> Guardar Cambios de Identidad
                   </button>
                </form>
             </div>
-          </div>
+          )}
 
-          {/* PANEL DE PORTAL Y ACCESO RÁPIDO */}
-          <div className="lg:col-span-5 space-y-8">
-            <div className="bg-gradient-to-br from-brand-navy to-[#1a1a5e] rounded-[4rem] p-12 text-white space-y-8 shadow-2xl relative overflow-hidden">
-               <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
-               <div className="flex items-center gap-4 relative z-10">
-                  <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
-                     <Globe size={28} className="text-brand-secondary" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-ubuntu font-bold">Portal Virtual</h3>
-                    <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Agenda para Pacientes</p>
+          {clinicDetailTab === 'portal' && (
+            <div className="max-w-5xl mx-auto space-y-10 animate-fade-in">
+               <div className="bg-gradient-to-br from-brand-navy to-slate-900 rounded-[4rem] p-16 text-white relative overflow-hidden shadow-2xl border border-white/5">
+                  <div className="absolute top-0 right-0 p-20 opacity-10"><Globe size={300} /></div>
+                  <div className="relative z-10 max-w-2xl space-y-8">
+                     <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
+                           <Globe size={32} className="text-brand-secondary" />
+                        </div>
+                        <h3 className="text-4xl font-ubuntu font-bold">Portal de Agenda Virtual</h3>
+                     </div>
+                     <p className="text-xl text-white/60 leading-relaxed font-medium">Tus pacientes ahora pueden agendar desde cualquier dispositivo. Este es tu centro de acceso directo.</p>
+                     
+                     <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] space-y-6">
+                        <label className="text-[10px] font-bold text-brand-secondary uppercase tracking-[0.3em]">Enlace Público de tu Clínica</label>
+                        <div className="flex flex-col sm:flex-row gap-4">
+                           <div className="flex-1 bg-brand-navy/60 p-5 rounded-2xl border border-white/10 font-mono text-xs flex items-center gap-3 truncate">
+                              <Globe size={14} className="text-brand-secondary" /> bee-clinical.system/portal/{editingClinic?.id}
+                           </div>
+                           <button onClick={copyPortalLink} className="bg-white text-brand-navy px-8 py-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-3 hover:bg-brand-secondary hover:text-white transition-all">
+                              <Copy size={16} /> Copiar
+                           </button>
+                        </div>
+                     </div>
+
+                     <div className="flex gap-4">
+                        <button 
+                          onClick={() => window.open('/portal', '_blank')}
+                          className="px-10 py-5 bg-brand-secondary text-white rounded-[2rem] font-bold text-sm shadow-xl flex items-center gap-3 hover:scale-105 transition-all"
+                        >
+                          <ExternalLink size={18} /> Previsualizar Portal
+                        </button>
+                        <button className="px-10 py-5 bg-white/10 border border-white/20 text-white rounded-[2rem] font-bold text-sm hover:bg-white/20 transition-all">
+                           Configurar Servicios
+                        </button>
+                     </div>
                   </div>
                </div>
 
-               <div className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4 relative z-10">
-                  <p className="text-xs text-white/60 font-medium leading-relaxed">Este es el enlace que debes compartir con tus pacientes para que agenden sus citas de forma autónoma.</p>
-                  <div className="flex items-center gap-3 bg-brand-navy/50 p-4 rounded-xl border border-white/5">
-                     <Globe size={14} className="text-brand-secondary shrink-0" />
-                     <span className="text-[10px] font-mono font-bold truncate">bee-clinical.system/portal/{editingClinic?.id}</span>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center text-center space-y-4">
+                     <div className="w-14 h-14 bg-brand-lightSecondary rounded-2xl flex items-center justify-center text-brand-secondary"><MousePointer2 size={24} /></div>
+                     <h4 className="font-ubuntu font-bold text-brand-navy">Autoservicio 24/7</h4>
+                     <p className="text-xs text-slate-400 font-medium">Tus pacientes no necesitan llamar para pedir cita.</p>
+                  </div>
+                  <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center text-center space-y-4">
+                     <div className="w-14 h-14 bg-brand-lightPrimary rounded-2xl flex items-center justify-center text-brand-primary"><Sparkles size={24} /></div>
+                     <h4 className="font-ubuntu font-bold text-brand-navy">Branding Total</h4>
+                     <p className="text-xs text-slate-400 font-medium">El portal hereda tus colores y logo automáticamente.</p>
+                  </div>
+                  <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col items-center text-center space-y-4">
+                     <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-500"><CheckCircle size={24} /></div>
+                     <h4 className="font-ubuntu font-bold text-brand-navy">Agenda Real</h4>
+                     <p className="text-xs text-slate-400 font-medium">Solo muestra los horarios que configures en Sedes.</p>
                   </div>
                </div>
+            </div>
+          )}
 
-               <div className="grid grid-cols-1 gap-4 relative z-10">
+          {clinicDetailTab === 'access' && (
+            <div className="space-y-10 animate-fade-in">
+               <div className="flex justify-between items-center px-4">
+                  <div className="flex items-center gap-4">
+                     <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400"><Lock size={24} /></div>
+                     <div>
+                        <h3 className="text-2xl font-ubuntu font-bold text-brand-navy">Identidades de Acceso</h3>
+                        <p className="text-slate-400 text-sm font-medium">Usuarios registrados para {editingClinic?.name}.</p>
+                     </div>
+                  </div>
                   <button 
-                    onClick={() => window.open('/portal', '_blank')}
-                    className="w-full py-4 bg-brand-secondary text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-3 hover:bg-brand-secondary/90 transition-all"
+                    onClick={() => {
+                       setNewUserForm({ ...newUserForm, companyId: editingClinicId! });
+                       setShowUserModal(true);
+                    }} 
+                    className="bg-brand-navy text-white px-8 py-3.5 rounded-2xl font-bold flex items-center gap-3 shadow-xl text-xs"
                   >
-                    <ExternalLink size={16} /> Previsualizar Portal
-                  </button>
-                  <button className="w-full py-4 bg-white/10 border border-white/20 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-3 hover:bg-white/20 transition-all">
-                     <MousePointer2 size={16} /> Copiar Enlace Directo
+                    <UserPlus size={18} /> Crear Nuevo Acceso
                   </button>
                </div>
-            </div>
 
-            <div className="bg-white rounded-[3.5rem] border border-slate-100 p-10 clinical-shadow space-y-6">
-               <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-brand-lightPrimary text-brand-primary rounded-2xl flex items-center justify-center">
-                     <Sparkles size={24} />
-                  </div>
-                  <h4 className="font-ubuntu font-bold text-lg text-brand-navy">Estado del Tenant</h4>
-               </div>
-               <div className="space-y-4">
-                  <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
-                     <span className="text-[10px] font-bold text-slate-400 uppercase">Sedes Activas</span>
-                     <span className="text-brand-navy font-bold">{availableSedes.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
-                     <span className="text-[10px] font-bold text-slate-400 uppercase">Citas del Mes</span>
-                     <span className="text-brand-navy font-bold">142</span>
-                  </div>
-                  <div className="flex justify-between items-center bg-green-50 p-4 rounded-2xl border border-green-100">
-                     <span className="text-[10px] font-bold text-green-600 uppercase">Estado</span>
-                     <span className="text-green-600 font-bold flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Operativo
-                     </span>
-                  </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
+                  {clinicUsers.length > 0 ? (
+                    clinicUsers.map(u => (
+                      <div key={u.id} className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+                        <div className="flex items-center gap-5">
+                          <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-50 shadow-inner shrink-0 bg-slate-50">
+                            <img src={u.avatar || `https://i.pravatar.cc/150?u=${u.id}`} className="w-full h-full object-cover" />
+                          </div>
+                          <div>
+                            <h4 className="font-ubuntu font-bold text-lg text-brand-navy leading-tight">{u.name}</h4>
+                            <span className={`inline-block px-2 py-0.5 rounded-lg text-[8px] font-bold uppercase tracking-widest mt-1 border ${
+                              u.role === UserRole.ADMIN ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-500 border-slate-100'
+                            }`}>
+                              {u.role}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-3 pt-6 mt-6 border-t border-slate-50">
+                           <div className="flex items-center gap-3 text-slate-400 text-xs font-medium">
+                              <Mail size={14} className="text-brand-secondary" /> {u.email}
+                           </div>
+                           <div className="flex items-center gap-3 text-slate-400 text-xs font-medium">
+                              <MapPin size={14} className="text-brand-accent" /> {u.sedeIds ? `${u.sedeIds.length} Sedes` : 'Acceso Global'}
+                           </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full py-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
+                       <p className="text-slate-300 font-bold uppercase tracking-widest text-xs">No hay usuarios asignados a esta clínica todavía.</p>
+                    </div>
+                  )}
                </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* VISTA DE USUARIOS (IDENTIDADES) - Solo se muestra si no estamos editando una clínica */}
+      {/* VISTA GLOBAL: GESTIÓN DE TODOS LOS USUARIOS (Solo si no estamos en detalle) */}
       {isSuperAdmin && activeSubTab === 'users' && !editingClinicId && (
-        <div className="space-y-10 px-4">
+        <div className="space-y-10 px-4 animate-fade-in">
            <div className="flex justify-between items-center">
-              <h3 className="text-2xl font-ubuntu font-bold text-brand-navy">Gestión de Accesos</h3>
+              <h3 className="text-2xl font-ubuntu font-bold text-brand-navy">Directorio de Identidades Global</h3>
               <button onClick={() => setShowUserModal(true)} className="bg-brand-secondary text-white px-8 py-3.5 rounded-2xl font-bold flex items-center gap-3 shadow-xl text-xs">
                 <UserPlus size={18} /> Nuevo Acceso
               </button>
@@ -304,7 +386,7 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
                 return (
                   <div key={u.id} className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm hover:shadow-xl transition-all group">
                     <div className="flex items-center gap-5 mb-6">
-                      <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-50 shadow-inner shrink-0">
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-50 shadow-inner shrink-0 bg-slate-50">
                         <img src={u.avatar || `https://i.pravatar.cc/150?u=${u.id}`} className="w-full h-full object-cover" />
                       </div>
                       <div>
@@ -324,10 +406,7 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
                           <Mail size={14} className="text-brand-secondary" /> {u.email}
                        </div>
                        <div className="flex items-center gap-3 text-slate-400 text-xs font-medium">
-                          <Building size={14} className="text-brand-primary" /> {company?.name || 'Bee Global'}
-                       </div>
-                       <div className="flex items-center gap-3 text-slate-400 text-xs font-medium">
-                          <MapPin size={14} className="text-brand-accent" /> {u.sedeIds ? `${u.sedeIds.length} Sedes` : 'Acceso Global'}
+                          <Building size={14} className="text-brand-primary" /> {company?.name || 'Bee Ecosistema'}
                        </div>
                     </div>
                   </div>
@@ -337,7 +416,7 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
         </div>
       )}
 
-      {/* MODAL NUEVA CLÍNICA */}
+      {/* MODALES DE CREACIÓN */}
       {showCompanyModal && (
         <div className="fixed inset-0 z-[100] bg-brand-navy/60 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in">
            <div className="bg-white rounded-[3rem] w-full max-w-md p-10 shadow-2xl border border-slate-100">
@@ -347,7 +426,7 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
                   onAddCompany({ id: 'c-' + Math.random().toString(36).substr(2, 5), name: (e.target as any).elements.name.value, logo: '', portalHero: '', primaryColor: '#714B67', active: true });
                   setShowCompanyModal(false);
               }} className="space-y-4">
-                 <input name="name" placeholder="Nombre de la Institución" required className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none font-bold outline-none" />
+                 <input name="name" placeholder="Nombre de la Institución" required className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none font-bold outline-none shadow-inner" />
                  <button type="submit" className="w-full py-4 bg-brand-navy text-white rounded-2xl font-bold shadow-xl">Activar Nuevo Tenant</button>
                  <button type="button" onClick={() => setShowCompanyModal(false)} className="w-full text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">Cancelar</button>
               </form>
@@ -355,12 +434,11 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
         </div>
       )}
 
-      {/* MODAL NUEVO USUARIO */}
       {showUserModal && (
         <div className="fixed inset-0 z-[100] bg-brand-navy/60 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in">
            <div className="bg-white rounded-[3rem] w-full max-w-lg p-10 shadow-2xl max-h-[90vh] overflow-y-auto">
               <h3 className="text-2xl font-ubuntu font-bold text-brand-navy mb-8 flex items-center gap-3">
-                <UserPlus className="text-brand-secondary" /> Nuevo Acceso Identidad
+                <UserPlus className="text-brand-secondary" /> {editingClinicId ? `Nuevo Acceso para ${editingClinic?.name}` : 'Nuevo Acceso Identidad'}
               </h3>
               <form onSubmit={(e) => {
                   e.preventDefault();
@@ -369,42 +447,44 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
                     name: newUserForm.name, 
                     email: newUserForm.email, 
                     role: newUserForm.role, 
-                    companyId: newUserForm.companyId, 
+                    companyId: editingClinicId || newUserForm.companyId, 
                     sedeIds: newUserForm.selectedSedes 
                   });
                   setShowUserModal(false);
               }} className="space-y-6">
                  <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nombre Completo</label>
-                    <input placeholder="Ej: Juan Pérez" required className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none font-bold outline-none" value={newUserForm.name} onChange={e => setNewUserForm({...newUserForm, name: e.target.value})} />
+                    <input placeholder="Ej: Juan Pérez" required className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none font-bold outline-none shadow-inner" value={newUserForm.name} onChange={e => setNewUserForm({...newUserForm, name: e.target.value})} />
                  </div>
                  
                  <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Correo Electrónico</label>
-                    <input type="email" placeholder="email@ejemplo.com" required className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none font-medium outline-none" value={newUserForm.email} onChange={e => setNewUserForm({...newUserForm, email: e.target.value})} />
+                    <input type="email" placeholder="email@ejemplo.com" required className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none font-medium outline-none shadow-inner" value={newUserForm.email} onChange={e => setNewUserForm({...newUserForm, email: e.target.value})} />
                  </div>
 
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Rol de Usuario</label>
-                        <select className="w-full px-4 py-4 bg-slate-50 rounded-2xl border-none text-xs font-bold appearance-none" value={newUserForm.role} onChange={e => setNewUserForm({...newUserForm, role: e.target.value as UserRole})}>
+                        <select className="w-full px-4 py-4 bg-slate-50 rounded-2xl border-none text-xs font-bold appearance-none cursor-pointer" value={newUserForm.role} onChange={e => setNewUserForm({...newUserForm, role: e.target.value as UserRole})}>
                             <option value={UserRole.ADMIN}>Administrador</option>
                             <option value={UserRole.RECEPCIONIST}>Recepcionista</option>
                             <option value={UserRole.SPECIALIST}>Especialista</option>
                         </select>
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Asignar Clínica</label>
-                        <select className="w-full px-4 py-4 bg-slate-50 rounded-2xl border-none text-xs font-bold appearance-none" value={newUserForm.companyId} onChange={e => setNewUserForm({...newUserForm, companyId: e.target.value})}>
-                            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
-                    </div>
+                    {!editingClinicId && (
+                      <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Asignar Clínica</label>
+                          <select className="w-full px-4 py-4 bg-slate-50 rounded-2xl border-none text-xs font-bold appearance-none cursor-pointer" value={newUserForm.companyId} onChange={e => setNewUserForm({...newUserForm, companyId: e.target.value})}>
+                              {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          </select>
+                      </div>
+                    )}
                  </div>
 
                  {availableSedes.length > 0 && (
                    <div className="space-y-3">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Asignar Sedes (Opcional)</label>
-                      <div className="grid grid-cols-2 gap-3 bg-slate-50 p-6 rounded-[1.5rem] border border-slate-100">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Permisos por Sede (Opcional)</label>
+                      <div className="grid grid-cols-2 gap-3 bg-slate-50 p-6 rounded-[1.5rem] border border-slate-100 shadow-inner">
                         {availableSedes.map(s => (
                           <label key={s.id} className="flex items-center gap-3 cursor-pointer group">
                              <input 
