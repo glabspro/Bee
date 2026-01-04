@@ -9,17 +9,29 @@ export enum AppointmentStatus {
 }
 
 export enum UserRole {
-  SUPER_ADMIN = 'Super Admin',
-  ADMIN = 'Administrador',
-  RECEPCIONIST = 'Recepcionista',
-  SPECIALIST = 'Especialista'
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN = 'ADMINISTRADOR',
+  RECEPCIONIST = 'RECEPCIONISTA',
+  SPECIALIST = 'ESPECIALISTA'
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  logo?: string;
+  portalHero?: string;
+  primaryColor: string;
+  active: boolean;
 }
 
 export interface User {
   id: string;
   name: string;
+  email: string;
   role: UserRole;
-  companyId?: string;
+  companyId: string;
+  sedeIds?: string[]; // Si es null, tiene acceso a todas
+  avatar?: string;
 }
 
 export interface Sede {
@@ -28,6 +40,7 @@ export interface Sede {
   address: string;
   phone: string;
   whatsapp: string;
+  companyId: string;
 }
 
 export interface Professional {
@@ -36,6 +49,8 @@ export interface Professional {
   specialty: string;
   avatar?: string;
   sedeIds: string[];
+  companyId: string;
+  userId: string;
 }
 
 export interface Service {
@@ -44,6 +59,7 @@ export interface Service {
   duration: number; 
   price: number;
   category: string;
+  companyId: string;
 }
 
 export interface Patient {
@@ -54,6 +70,7 @@ export interface Patient {
   documentId: string;
   birthDate: string;
   history: ClinicalHistoryEntry[];
+  companyId: string;
 }
 
 export interface ClinicalHistoryEntry {
@@ -82,6 +99,7 @@ export interface Appointment {
   status: AppointmentStatus;
   notes?: string;
   bookingCode: string;
+  companyId: string;
 }
 
 export interface AppNotification {
@@ -92,10 +110,11 @@ export interface AppNotification {
   read: boolean;
   type: 'NEW_PORTAL' | 'UPCOMING' | 'SYSTEM';
   appointmentId?: string;
+  companyId: string;
 }
 
 export interface ViewState {
-  currentView: 'login' | 'dashboard' | 'appointments' | 'patients' | 'schedules' | 'portal' | 'clinical-record';
+  currentView: 'login' | 'dashboard' | 'appointments' | 'patients' | 'schedules' | 'portal' | 'clinical-record' | 'saas-admin' | 'staff-management';
   activeAppointmentId?: string;
   user?: User;
 }

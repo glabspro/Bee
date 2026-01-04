@@ -1,27 +1,26 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Plus, 
   Stethoscope, 
   Calendar as CalendarIcon,
   CheckCircle,
-  UserPlus,
-  Edit,
   X,
-  AlertCircle,
   Search,
   User,
   IdCard,
-  Cake,
   LayoutGrid,
   ChevronLeft,
   ChevronRight,
-  Filter,
-  MoreVertical,
   Clock,
   MapPin,
   FileText,
-  Mail
+  Mail,
+  Phone,
+  Hash,
+  AtSign,
+  Save,
+  AlertCircle
 } from 'lucide-react';
 import { Appointment, AppointmentStatus, Patient, Sede } from '../types';
 import { MOCK_SERVICES, STATUS_COLORS } from '../constants';
@@ -52,8 +51,28 @@ const AppointmentManager: React.FC<AppointmentManagerProps> = ({
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState<Appointment | null>(null);
-  const [showCreatePatientModal, setShowCreatePatientModal] = useState<Appointment | null>(null);
-  const [newPatientData, setNewPatientData] = useState({ dni: '', birthDate: '', email: '' });
+  
+  // Estado local para edición dentro del modal
+  const [editForm, setEditForm] = useState({
+    patientName: '',
+    patientPhone: '',
+    patientDni: '',
+    patientEmail: '',
+    notes: ''
+  });
+
+  // Cargar datos al abrir el modal de edición
+  useEffect(() => {
+    if (showEditModal) {
+      setEditForm({
+        patientName: showEditModal.patientName || '',
+        patientPhone: showEditModal.patientPhone || '',
+        patientDni: showEditModal.patientDni || '',
+        patientEmail: showEditModal.patientEmail || '',
+        notes: showEditModal.notes || ''
+      });
+    }
+  }, [showEditModal]);
 
   const [formData, setFormData] = useState({
     patientName: '',
@@ -111,24 +130,19 @@ const AppointmentManager: React.FC<AppointmentManagerProps> = ({
     setShowEditModal(null);
   };
 
-  const handleCreatePatient = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!showCreatePatientModal) return;
-
-    const newPatient: Patient = {
-      id: 'pat-' + Math.random().toString(36).substr(2, 9),
-      name: showCreatePatientModal.patientName,
-      phone: showCreatePatientModal.patientPhone,
-      email: newPatientData.email || undefined,
-      documentId: newPatientData.dni,
-      birthDate: newPatientData.birthDate,
-      history: []
+  const handleSaveChanges = () => {
+    if (!showEditModal) return;
+    const updatedApt: Appointment = {
+      ...showEditModal,
+      patientName: editForm.patientName,
+      patientPhone: editForm.patientPhone,
+      patientDni: editForm.patientDni,
+      patientEmail: editForm.patientEmail,
+      notes: editForm.notes
     };
-
-    onAddPatient(newPatient);
-    onUpdateAppointment({ ...showCreatePatientModal, patientId: newPatient.id });
-    setShowCreatePatientModal(null);
-    setNewPatientData({ dni: '', birthDate: '', email: '' });
+    onUpdateAppointment(updatedApt);
+    // Si no existe como paciente, se podría gatillar onAddPatient aquí si fuera necesario
+    alert("Datos actualizados correctamente.");
   };
 
   const handleSaveAppointment = (e: React.FormEvent) => {
@@ -146,7 +160,8 @@ const AppointmentManager: React.FC<AppointmentManagerProps> = ({
       time: formData.time,
       status: AppointmentStatus.CONFIRMED,
       notes: formData.notes,
-      bookingCode: 'BEE-' + Math.random().toString(36).substr(2, 5).toUpperCase()
+      bookingCode: 'BEE-' + Math.random().toString(36).substr(2, 5).toUpperCase(),
+      companyId: sedes.find(s => s.id === formData.sedeId)?.companyId || 'bee-main'
     };
     onAddAppointment(newApt);
     setShowAddModal(false);
@@ -366,7 +381,7 @@ const AppointmentManager: React.FC<AppointmentManagerProps> = ({
         {viewMode === 'calendar' ? renderCalendarView() : renderListView()}
       </div>
 
-      {/* QUICK ADD MODAL - MEJORADO */}
+      {/* QUICK ADD MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-[60] bg-brand-navy/60 backdrop-blur-sm flex items-center justify-center p-6">
           <div className="bg-white rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl animate-fade-in border border-slate-100">
@@ -466,18 +481,6 @@ const AppointmentManager: React.FC<AppointmentManagerProps> = ({
                       {sedes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                       <FileText size={12} className="text-brand-primary" /> Nota / Observación
-                    </label>
-                    <textarea 
-                      placeholder="Detalles adicionales o motivo de consulta..." 
-                      className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-secondary font-medium text-xs outline-none shadow-inner min-h-[80px] resize-none"
-                      value={formData.notes}
-                      onChange={e => setFormData({...formData, notes: e.target.value})}
-                    />
-                  </div>
                </div>
                
                <button type="submit" className="w-full py-5 bg-brand-secondary text-white rounded-2xl font-bold text-sm shadow-xl shadow-brand-secondary/20 hover:bg-brand-secondary/90 transition-all active:scale-95 flex items-center justify-center gap-3">
@@ -488,81 +491,125 @@ const AppointmentManager: React.FC<AppointmentManagerProps> = ({
         </div>
       )}
 
-      {showCreatePatientModal && (
-        <div className="fixed inset-0 z-[70] bg-brand-navy/70 backdrop-blur-md flex items-center justify-center p-6">
-          <div className="bg-white rounded-[2rem] w-full max-w-sm p-8 shadow-2xl animate-fade-in space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-ubuntu font-bold text-brand-navy">Nueva Ficha</h3>
-              <button onClick={() => setShowCreatePatientModal(null)} className="text-slate-300"><X size={24} /></button>
-            </div>
-            <form onSubmit={handleCreatePatient} className="space-y-4">
-               <input 
-                  type="text" 
-                  placeholder="DNI / ID"
-                  required 
-                  className="w-full p-4 bg-slate-50 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary font-bold text-sm shadow-inner"
-                  value={newPatientData.dni}
-                  onChange={e => setNewPatientData({...newPatientData, dni: e.target.value})}
-               />
-               <input 
-                  type="email" 
-                  placeholder="Email (Opcional)"
-                  className="w-full p-4 bg-slate-50 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary text-sm shadow-inner"
-                  value={newPatientData.email}
-                  onChange={e => setNewPatientData({...newPatientData, email: e.target.value})}
-               />
-               <input 
-                  type="date" 
-                  required 
-                  className="w-full p-4 bg-slate-50 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary text-xs font-bold shadow-inner"
-                  value={newPatientData.birthDate}
-                  onChange={e => setNewPatientData({...newPatientData, birthDate: e.target.value})}
-               />
-               <button type="submit" className="w-full py-4 bg-brand-navy text-white rounded-xl font-bold text-sm">Crear Expediente</button>
-            </form>
-          </div>
-        </div>
-      )}
-
+      {/* MODAL DE GESTIÓN Y EDICIÓN DE CITA */}
       {showEditModal && (
-        <div className="fixed inset-0 z-[60] bg-brand-navy/70 backdrop-blur-md flex items-center justify-center p-6">
-          <div className="bg-white rounded-[2rem] w-full max-w-sm p-8 shadow-2xl animate-fade-in space-y-6 border border-slate-100">
+        <div className="fixed inset-0 z-[60] bg-brand-navy/80 backdrop-blur-xl flex items-center justify-center p-6 animate-fade-in">
+          <div className="bg-white rounded-[3rem] w-full max-w-sm p-10 shadow-[0_50px_100px_rgba(0,0,0,0.3)] border border-white/20 relative overflow-hidden flex flex-col gap-6">
+             
+             {/* Cabecera con Nombre e Inicial */}
              <div className="flex justify-between items-start">
                 <div className="flex gap-4">
-                  <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center font-bold text-2xl text-slate-300 shadow-inner">
-                    {showEditModal.patientName.charAt(0)}
+                  <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center font-ubuntu font-bold text-3xl text-brand-navy shadow-inner border border-slate-100">
+                    {editForm.patientName.charAt(0) || '?'}
                   </div>
-                  <div>
-                    <h3 className="text-lg font-ubuntu font-bold text-brand-navy leading-tight">{showEditModal.patientName}</h3>
-                    <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest flex items-center gap-2">
+                  <div className="flex flex-col justify-center">
+                    <h3 className="text-xl font-ubuntu font-bold text-brand-navy leading-tight">
+                      {editForm.patientName || 'Nueva Cita'}
+                    </h3>
+                    <p className="text-slate-400 text-[11px] font-bold mt-2 uppercase tracking-[0.2em] flex items-center gap-2">
                        <Clock size={12} className="text-brand-secondary" /> {showEditModal.time}
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setShowEditModal(null)} className="text-slate-300 hover:text-slate-500 p-2"><X size={28} /></button>
+                <button onClick={() => setShowEditModal(null)} className="text-slate-300 hover:text-brand-navy p-2 transition-colors"><X size={32} /></button>
              </div>
 
-             {showEditModal.notes && (
-                <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
-                   <p className="text-[9px] font-bold text-amber-600 uppercase tracking-widest mb-1 flex items-center gap-2">
-                      <FileText size={10} /> Nota de agendamiento
-                   </p>
-                   <p className="text-[11px] text-amber-800 font-medium italic">{showEditModal.notes}</p>
+             {/* Campos Editables de Datos del Paciente */}
+             <div className="bg-slate-50/40 p-6 rounded-[2.5rem] border border-slate-100 space-y-4">
+                <div className="space-y-4">
+                  {/* Nombre (Editable) */}
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                       <User size={12} className="text-brand-secondary" /> Nombre Completo
+                    </label>
+                    <input 
+                      type="text" 
+                      className="w-full px-4 py-2 bg-white border border-slate-100 rounded-xl focus:ring-2 focus:ring-brand-secondary text-sm font-bold text-brand-navy outline-none"
+                      value={editForm.patientName}
+                      onChange={e => setEditForm({...editForm, patientName: e.target.value})}
+                    />
+                  </div>
+
+                  {/* Teléfono (Editable) */}
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                      <Phone size={12} className="text-brand-secondary" /> Número Móvil
+                    </label>
+                    <input 
+                      type="tel" 
+                      className="w-full px-4 py-2 bg-white border border-slate-100 rounded-xl focus:ring-2 focus:ring-brand-secondary text-sm font-bold text-brand-navy outline-none"
+                      value={editForm.patientPhone}
+                      onChange={e => setEditForm({...editForm, patientPhone: e.target.value})}
+                    />
+                  </div>
+
+                  {/* DNI (Editable) */}
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                      <Hash size={12} className="text-brand-primary" /> DNI / Identificación
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="Pendiente de registro"
+                      className="w-full px-4 py-2 bg-white border border-slate-100 rounded-xl focus:ring-2 focus:ring-brand-secondary text-sm font-bold text-brand-navy outline-none placeholder:text-slate-200"
+                      value={editForm.patientDni}
+                      onChange={e => setEditForm({...editForm, patientDni: e.target.value})}
+                    />
+                  </div>
+
+                  {/* Email (Editable) */}
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                      <AtSign size={12} className="text-brand-accent" /> Correo Electrónico
+                    </label>
+                    <input 
+                      type="email" 
+                      placeholder="Pendiente de registro"
+                      className="w-full px-4 py-2 bg-white border border-slate-100 rounded-xl focus:ring-2 focus:ring-brand-secondary text-sm font-bold text-brand-navy outline-none placeholder:text-slate-200"
+                      value={editForm.patientEmail}
+                      onChange={e => setEditForm({...editForm, patientEmail: e.target.value})}
+                    />
+                  </div>
                 </div>
-             )}
-             
+
+                <button 
+                  onClick={handleSaveChanges}
+                  className="w-full py-3 bg-white border border-slate-200 text-brand-navy rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all mt-2"
+                >
+                  <Save size={14} /> Guardar Datos Paciente
+                </button>
+             </div>
+
+             {/* Acciones de Estado de Cita */}
              <div className="grid grid-cols-1 gap-3">
-                <button onClick={() => handleUpdateStatus(showEditModal, AppointmentStatus.CONFIRMED)} className="w-full py-4 bg-blue-50 text-blue-700 rounded-2xl font-bold border border-blue-100 text-[11px] flex items-center justify-center gap-3 hover:bg-blue-100 transition-all">
+                <button 
+                  onClick={() => handleUpdateStatus(showEditModal, AppointmentStatus.CONFIRMED)} 
+                  className="w-full py-4 bg-teal-50/50 text-teal-700 rounded-2xl font-bold text-[11px] flex items-center justify-center gap-3 hover:bg-teal-500 hover:text-white transition-all border border-teal-100 uppercase tracking-widest"
+                >
                   <CheckCircle size={18} /> Confirmar Turno
                 </button>
-                <button onClick={() => handleUpdateStatus(showEditModal, AppointmentStatus.CANCELLED)} className="w-full py-4 bg-red-50 text-red-700 rounded-2xl font-bold border border-red-100 text-[11px] flex items-center justify-center gap-3 hover:bg-red-100 transition-all">
+                <button 
+                  onClick={() => handleUpdateStatus(showEditModal, AppointmentStatus.CANCELLED)} 
+                  className="w-full py-4 bg-red-50 text-red-700 rounded-2xl font-bold text-[11px] flex items-center justify-center gap-3 hover:bg-red-500 hover:text-white transition-all border border-red-100 uppercase tracking-widest"
+                >
                   <X size={18} /> Anular Cita
                 </button>
              </div>
              
-             <button onClick={() => { onStartClinicalSession(showEditModal.id); setShowEditModal(null); }} className="w-full py-5 bg-brand-navy text-white rounded-2xl font-bold text-sm mt-4 flex items-center justify-center gap-3 hover:bg-brand-navy/90 transition-all shadow-xl shadow-brand-navy/20">
-                <Stethoscope size={22} /> Iniciar Atención Clínica
+             {/* Acción Principal de Atención */}
+             <button 
+               onClick={() => { 
+                 handleSaveChanges(); // Asegurar guardado antes de iniciar sesión
+                 onStartClinicalSession(showEditModal.id); 
+                 setShowEditModal(null); 
+               }} 
+               className="w-full py-5 bg-brand-navy text-white rounded-3xl font-bold text-sm flex items-center justify-center gap-4 hover:bg-brand-navy/90 transition-all shadow-2xl active:scale-95 border border-white/10"
+             >
+                <Stethoscope size={24} className="text-brand-secondary" /> Iniciar Atención Clínica
              </button>
+
+             {/* Decoración sutil */}
+             <div className="absolute -right-24 -bottom-24 w-64 h-64 bg-slate-50 rounded-full blur-3xl opacity-30 -z-10"></div>
           </div>
         </div>
       )}

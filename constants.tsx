@@ -2,21 +2,24 @@
 import { AppointmentStatus, Service, Professional, Sede, Patient } from './types';
 
 export const MOCK_SERVICES: Service[] = [
-  { id: 's1', name: 'Consulta General', duration: 30, price: 50, category: 'General' },
-  { id: 's2', name: 'Limpieza Dental', duration: 45, price: 80, category: 'Odontología' },
-  { id: 's3', name: 'Ortodoncia - Ajuste', duration: 20, price: 120, category: 'Odontología' },
-  { id: 's4', name: 'Blanqueamiento', duration: 60, price: 200, category: 'Estética' },
+  // Added companyId to satisfy Service interface
+  { id: 's1', name: 'Consulta General', duration: 30, price: 50, category: 'General', companyId: 'bee-main' },
+  { id: 's2', name: 'Limpieza Dental', duration: 45, price: 80, category: 'Odontología', companyId: 'bee-main' },
+  { id: 's3', name: 'Ortodoncia - Ajuste', duration: 20, price: 120, category: 'Odontología', companyId: 'bee-main' },
+  { id: 's4', name: 'Blanqueamiento', duration: 60, price: 200, category: 'Estética', companyId: 'bee-main' },
 ];
 
 export const MOCK_PROFESSIONALS: Professional[] = [
-  { id: 'p1', name: 'Dr. Alejandro Soto', specialty: 'Odontólogo General', avatar: 'https://i.pravatar.cc/150?u=p1', sedeIds: ['sede1'] },
-  { id: 'p2', name: 'Dra. María García', specialty: 'Ortodoncista', avatar: 'https://i.pravatar.cc/150?u=p2', sedeIds: ['sede1', 'sede2'] },
-  { id: 'p3', name: 'Dr. Juan Pérez', specialty: 'Cirujano Máxilo', avatar: 'https://i.pravatar.cc/150?u=p3', sedeIds: ['sede2'] },
+  // Added companyId and userId to satisfy Professional interface
+  { id: 'p1', name: 'Dr. Alejandro Soto', specialty: 'Odontólogo General', avatar: 'https://i.pravatar.cc/150?u=p1', sedeIds: ['sede1'], companyId: 'bee-main', userId: 'u-1' },
+  { id: 'p2', name: 'Dra. María García', specialty: 'Ortodoncista', avatar: 'https://i.pravatar.cc/150?u=p2', sedeIds: ['sede1', 'sede2'], companyId: 'bee-main', userId: 'u-2' },
+  { id: 'p3', name: 'Dr. Juan Pérez', specialty: 'Cirujano Máxilo', avatar: 'https://i.pravatar.cc/150?u=p3', sedeIds: ['sede2'], companyId: 'bee-main', userId: 'u-3' },
 ];
 
 export const INITIAL_SEDES: Sede[] = [
-  { id: 'sede1', name: 'Sede Norte', address: 'Av. Principal 123', phone: '01 234 5678', whatsapp: '51900000001' },
-  { id: 'sede2', name: 'Sede Sur', address: 'Calle Secundaria 456', phone: '01 987 6543', whatsapp: '51900000002' },
+  // Added companyId to satisfy Sede interface
+  { id: 'sede1', name: 'Sede Norte', address: 'Av. Principal 123', phone: '01 234 5678', whatsapp: '51900000001', companyId: 'bee-main' },
+  { id: 'sede2', name: 'Sede Sur', address: 'Calle Secundaria 456', phone: '01 987 6543', whatsapp: '51900000002', companyId: 'bee-main' },
 ];
 
 export const STATUS_COLORS: Record<AppointmentStatus, string> = {
@@ -36,7 +39,9 @@ export const MOCK_PATIENTS: Patient[] = [
     phone: '555-1234',
     documentId: '12345678-9',
     birthDate: '1985-05-15',
-    history: []
+    history: [],
+    // Added companyId to satisfy Patient interface
+    companyId: 'bee-main'
   },
   {
     id: 'pat2',
@@ -45,6 +50,8 @@ export const MOCK_PATIENTS: Patient[] = [
     phone: '555-5678',
     documentId: '98765432-1',
     birthDate: '1992-08-22',
-    history: []
+    history: [],
+    // Added companyId to satisfy Patient interface
+    companyId: 'bee-main'
   }
 ];
