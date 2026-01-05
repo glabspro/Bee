@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { Sede, Company } from '../types';
 
-type Step = 'sede' | 'service' | 'info' | 'schedule' | 'confirm';
+type Step = 'sede' | 'info' | 'schedule' | 'confirm';
 
 interface PatientPortalProps {
   company: Company;
@@ -73,7 +73,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
   };
 
-  const steps: Step[] = ['sede', 'service', 'info', 'schedule', 'confirm'];
+  const steps: Step[] = ['sede', 'info', 'schedule', 'confirm'];
   const currentIdx = steps.indexOf(step);
 
   return (
@@ -125,7 +125,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                 <React.Fragment key={s}>
                     <div className="flex flex-col items-center gap-1.5 shrink-0">
                         <div 
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-bold transition-all duration-500 ${
                             idx < currentIdx ? 'bg-green-100 text-brand-primary' : 
                             idx === currentIdx ? 'text-white shadow-lg scale-110 ring-4 ring-brand-primary/10' : 
                             'bg-slate-100 text-slate-300'
@@ -149,7 +149,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                 {step === 'sede' && (
                   <div className="p-8 md:p-14 space-y-10 animate-fade-in flex-1">
                       <div className="text-center">
-                        <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">¿Dónde te atenderás?</h2>
+                        <h2 className="text-3xl font-ubuntu font-bold text-brand-navy text-balance">¿Dónde te atenderás?</h2>
                         <p className="text-slate-400 text-sm font-medium mt-2">Selecciona la sede más cercana a ti.</p>
                       </div>
 
@@ -181,11 +181,11 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                                   </div>
 
                                   <button 
-                                    onClick={() => { setBooking(prev => ({...prev, sede: s})); setStep('service'); }}
+                                    onClick={() => { setBooking(prev => ({...prev, sede: s})); setStep('info'); }}
                                     className="mt-8 w-full py-4 rounded-2xl text-white font-bold text-xs uppercase tracking-widest shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
                                     style={{ backgroundColor: primaryColor }}
                                   >
-                                    Seleccionar <ArrowRight size={14} />
+                                    Seleccionar Sede <ArrowRight size={14} />
                                   </button>
                               </div>
                             </div>
@@ -201,41 +201,12 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                   </div>
                 )}
 
-                {/* Paso 2: Servicio */}
-                {step === 'service' && (
-                  <div className="p-8 md:p-14 space-y-10 animate-fade-in max-w-2xl mx-auto w-full flex-1 flex flex-col justify-center items-center">
-                    <div className="text-center">
-                      <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Servicio Especializado</h2>
-                      <p className="text-slate-400 text-sm font-medium mt-2">Atención podológica clínica integral.</p>
-                    </div>
-
-                    <button 
-                      onClick={() => setStep('info')} 
-                      className="w-full p-8 bg-white rounded-3xl border border-slate-100 shadow-xl transition-all text-left flex items-center gap-6 group active:scale-95 border-l-[6px]"
-                      style={{ borderLeftColor: primaryColor }}
-                    >
-                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner shrink-0 group-hover:rotate-6 transition-transform" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
-                          <Building size={32} />
-                        </div>
-                        <div className="flex-1">
-                            <h4 className="font-ubuntu font-bold text-brand-navy text-xl">Podología Integral</h4>
-                            <p className="text-slate-500 text-xs font-medium mt-1 leading-relaxed">Profilaxis clínica, diagnóstico y tratamiento podológico completo.</p>
-                        </div>
-                        <ChevronRight className="text-slate-200 group-hover:text-brand-primary group-hover:translate-x-1 transition-all" size={24} />
-                    </button>
-
-                    <button onClick={() => setStep('sede')} className="text-slate-300 font-bold text-[9px] uppercase tracking-[0.2em] flex items-center gap-2 hover:text-brand-navy transition-colors mt-6">
-                      <ArrowLeft size={12} /> Regresar a sedes
-                    </button>
-                  </div>
-                )}
-
-                {/* Paso 3: Datos del Paciente */}
+                {/* Paso 2: Datos del Paciente */}
                 {step === 'info' && (
                   <div className="p-8 md:p-14 space-y-10 animate-fade-in max-w-xl mx-auto w-full flex-1 flex flex-col justify-center">
                     <div className="text-center">
                       <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Tus Datos</h2>
-                      <p className="text-slate-400 text-sm font-medium mt-2">Por favor ingresa tu información personal.</p>
+                      <p className="text-slate-400 text-sm font-medium mt-2">Ingresa tu información para confirmar tu cita de <b>Podología Integral</b>.</p>
                     </div>
 
                     <div className="space-y-5">
@@ -292,18 +263,25 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                             className="w-full py-5 text-white rounded-[1.5rem] font-bold text-base shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3" 
                             style={{ backgroundColor: primaryColor }}
                           >
-                            Continuar <ArrowRight size={18} />
+                            Ver Disponibilidad <ArrowRight size={18} />
                           </button>
                         </div>
+                        
+                        <button 
+                          onClick={() => setStep('sede')} 
+                          className="w-full text-slate-300 font-bold text-[9px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:text-brand-navy transition-colors mt-4"
+                        >
+                          <ArrowLeft size={12} /> Regresar a sedes
+                        </button>
                     </div>
                   </div>
                 )}
 
-                {/* Paso 4: Horario */}
+                {/* Paso 3: Horario */}
                 {step === 'schedule' && (
                   <div className="p-8 md:p-14 space-y-10 animate-fade-in max-w-2xl mx-auto w-full text-center flex-1 flex flex-col justify-center">
                     <div className="text-center">
-                      <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Disponibilidad</h2>
+                      <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Horario de Atención</h2>
                       <p className="text-slate-400 text-sm font-medium mt-2">Elige el día y la hora de tu preferencia.</p>
                     </div>
 
@@ -351,12 +329,12 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                   </div>
                 )}
 
-                {/* Paso 5: Resumen */}
+                {/* Paso 4: Resumen */}
                 {step === 'confirm' && (
                   <div className="p-8 md:p-14 space-y-10 animate-fade-in max-w-xl mx-auto w-full flex-1 flex flex-col justify-center">
                     <div className="text-center">
                       <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Confirmación</h2>
-                      <p className="text-slate-400 text-sm font-medium mt-2">Verifica los detalles de tu cita.</p>
+                      <p className="text-slate-400 text-sm font-medium mt-2">Verifica los detalles de tu cita profesional.</p>
                     </div>
 
                     <div className="bg-slate-50/70 rounded-[2.5rem] p-8 border border-slate-100 shadow-inner space-y-6">
@@ -408,7 +386,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                           )}
                       </button>
                       <p className="text-[9px] text-slate-400 font-bold uppercase text-center tracking-widest leading-relaxed">
-                         Al confirmar se enviará una solicitud directa a la sede para validar disponibilidad.
+                         Al confirmar se enviará una solicitud directa a la sede para validar disponibilidad de <b>Podología Integral</b>.
                       </p>
                     </div>
                   </div>
