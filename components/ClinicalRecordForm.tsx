@@ -114,7 +114,9 @@ const ClinicalRecordForm: React.FC<ClinicalRecordFormProps> = ({
         time: s.time,
         status: AppointmentStatus.CONFIRMED,
         bookingCode: 'BEE-PLAN-' + Math.random().toString(36).substr(2, 4).toUpperCase(),
-        notes: `Sesión de Seguimiento: Plan de Tratamiento iniciado el ${entry.date}`
+        notes: `Sesión de Seguimiento: Plan de Tratamiento iniciado el ${entry.date}`,
+        // Fix: Added missing companyId property to match the Appointment type
+        companyId: appointment.companyId
       }));
       onScheduleSessions(futureApts);
     }

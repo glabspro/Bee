@@ -25,7 +25,7 @@ import { Sede, DayAvailability, TimeInterval } from '../types';
 interface ScheduleManagerProps {
   sedes: Sede[];
   onUpdateSede: (sede: Sede) => Promise<void>;
-  onAddSede: (sede: Sede) => Promise<void>;
+  onAddSede: (sede: Sede) => Promise<any>;
 }
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -43,7 +43,7 @@ const DEFAULT_AVAILABILITY: Record<string, DayAvailability> = {
 const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, onAddSede }) => {
   const [selectedSede, setSelectedSede] = useState<Sede | null>(null);
   const [showSedeModal, setShowSedeModal] = useState<'edit' | 'add' | null>(null);
-  const [sedeForm, setSedeForm] = useState<Partial<Sede>>({ name: '', address: '', phone: '', whatsapp: '' });
+  const [sedeForm, setSedeForm] = useState({ name: '', address: '', phone: '', whatsapp: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [localAvailability, setLocalAvailability] = useState<Record<string, DayAvailability>>(DEFAULT_AVAILABILITY);
 
@@ -133,9 +133,9 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
     try {
       const updatedSede = { ...selectedSede, availability: localAvailability };
       await onUpdateSede(updatedSede);
-      alert("¡Sincronizado con la nube exitosamente!");
-    } catch (e) {
-      alert("Error al guardar.");
+      alert("✅ ¡Sincronizado con la nube exitosamente!");
+    } catch (e: any) {
+      console.error("Save All Error:", e);
     } finally {
       setIsSaving(false);
     }
@@ -143,23 +143,33 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
 
   const handleCreateSede = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!sedeForm.name || !sedeForm.address) {
+      alert("⚠️ Por favor completa los campos requeridos.");
+      return;
+    }
+    
     setIsSaving(true);
     try {
-      const newSede: Sede = {
-        id: 'sede-' + Math.random().toString(36).substr(2, 5),
-        name: sedeForm.name || 'Nueva Sede',
-        address: sedeForm.address || '',
-        phone: sedeForm.phone || '',
-        whatsapp: sedeForm.whatsapp || '',
-        companyId: '', // App.tsx gestiona esto
+      const newSedeData: Sede = {
+        id: '', 
+        name: sedeForm.name,
+        address: sedeForm.address,
+        phone: sedeForm.phone,
+        whatsapp: sedeForm.whatsapp,
+        companyId: '', 
         availability: localAvailability
       };
-      await onAddSede(newSede);
-      setShowSedeModal(null);
-      setSedeForm({ name: '', address: '', phone: '', whatsapp: '' });
-    } catch (err) {
-      console.error(err);
-      alert("Hubo un error al crear la sede.");
+      
+      const created = await onAddSede(newSedeData);
+      if (created) {
+        setSelectedSede(created);
+        setShowSedeModal(null);
+        setSedeForm({ name: '', address: '', phone: '', whatsapp: '' });
+      }
+    } catch (err: any) {
+      const displayErr = err instanceof Error ? err.message : (typeof err === 'object' ? JSON.stringify(err) : String(err));
+      console.error("UI error in handleCreateSede:", err);
+      alert(`Ocurrió un error al procesar la sede: ${displayErr}`);
     } finally {
       setIsSaving(false);
     }
@@ -172,16 +182,16 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
     try {
       const updatedSede = { 
         ...selectedSede, 
-        name: sedeForm.name!,
-        address: sedeForm.address!,
-        phone: sedeForm.phone!,
-        whatsapp: sedeForm.whatsapp!
+        name: sedeForm.name,
+        address: sedeForm.address,
+        phone: sedeForm.phone,
+        whatsapp: sedeForm.whatsapp
       };
       await onUpdateSede(updatedSede);
       setSelectedSede(updatedSede);
       setShowSedeModal(null);
-    } catch (err) {
-      alert("Error al actualizar los datos de la sede.");
+    } catch (err: any) {
+      console.error("Edit Sede UI Error:", err);
     } finally {
       setIsSaving(false);
     }
@@ -205,7 +215,7 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
     );
   }
 
-  if (!selectedSede) {
+  if (!selectedSede && sedes.length > 0) {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center text-slate-400 gap-4 animate-fade-in">
         <Loader2 className="animate-spin text-brand-secondary" size={40} />
@@ -241,130 +251,134 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
         </div>
       </header>
 
-      <div className="flex bg-slate-100/50 p-1.5 rounded-[2.5rem] border border-slate-200/50 mx-4 overflow-x-auto no-scrollbar">
-        {sedes.map(s => (
-          <button 
-            key={s.id}
-            onClick={() => setSelectedSede(s)}
-            className={`px-8 py-3.5 rounded-[2rem] text-[11px] font-bold transition-all whitespace-nowrap ${
-              selectedSede?.id === s.id 
-              ? 'bg-white text-brand-navy shadow-sm border border-slate-100' 
-              : 'text-slate-400 hover:text-slate-600'
-            }`}
-          >
-            {s.name}
-          </button>
-        ))}
-      </div>
+      {sedes.length > 0 && (
+        <div className="flex bg-slate-100/50 p-1.5 rounded-[2.5rem] border border-slate-200/50 mx-4 overflow-x-auto no-scrollbar">
+          {sedes.map(s => (
+            <button 
+              key={s.id}
+              onClick={() => setSelectedSede(s)}
+              className={`px-8 py-3.5 rounded-[2rem] text-[11px] font-bold transition-all whitespace-nowrap ${
+                selectedSede?.id === s.id 
+                ? 'bg-white text-brand-navy shadow-sm border border-slate-100' 
+                : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              {s.name}
+            </button>
+          ))}
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4">
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white p-8 rounded-[3rem] border border-slate-100 clinical-shadow space-y-6 relative overflow-hidden group">
-            <div className="flex justify-between items-start relative z-10">
-              <div className="w-16 h-16 bg-brand-lightSecondary rounded-3xl flex items-center justify-center text-brand-secondary shadow-inner">
-                <MapPin size={32} />
+      {selectedSede && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4">
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white p-8 rounded-[3rem] border border-slate-100 clinical-shadow space-y-6 relative overflow-hidden group">
+              <div className="flex justify-between items-start relative z-10">
+                <div className="w-16 h-16 bg-brand-lightSecondary rounded-3xl flex items-center justify-center text-brand-secondary shadow-inner">
+                  <MapPin size={32} />
+                </div>
+                <button 
+                  onClick={() => { if(selectedSede) { setSedeForm({ name: selectedSede.name, address: selectedSede.address, phone: selectedSede.phone, whatsapp: selectedSede.whatsapp }); setShowSedeModal('edit'); } }}
+                  className="w-10 h-10 bg-slate-50 text-slate-400 hover:text-brand-secondary hover:bg-white border border-transparent hover:border-slate-100 rounded-xl transition-all flex items-center justify-center"
+                >
+                  <Edit size={18} />
+                </button>
               </div>
-              <button 
-                onClick={() => { if(selectedSede) { setSedeForm(selectedSede); setShowSedeModal('edit'); } }}
-                className="w-10 h-10 bg-slate-50 text-slate-400 hover:text-brand-secondary hover:bg-white border border-transparent hover:border-slate-100 rounded-xl transition-all flex items-center justify-center"
-              >
-                <Edit size={18} />
-              </button>
-            </div>
-            
-            <div className="relative z-10">
-              <h3 className="text-2xl font-ubuntu font-bold text-brand-navy">{selectedSede.name}</h3>
-              <p className="text-slate-400 text-sm mt-2 font-medium">{selectedSede.address}</p>
-            </div>
+              
+              <div className="relative z-10">
+                <h3 className="text-2xl font-ubuntu font-bold text-brand-navy">{selectedSede.name}</h3>
+                <p className="text-slate-400 text-sm mt-2 font-medium">{selectedSede.address}</p>
+              </div>
 
-            <div className="pt-6 border-t border-slate-50 space-y-3 relative z-10">
-               <div className="flex items-center gap-3 text-slate-600 text-[11px] font-bold">
-                  <Phone size={14} className="text-brand-secondary" /> {selectedSede.phone || 'Sin teléfono'}
-               </div>
-               <div className="flex items-center gap-3 text-slate-600 text-[11px] font-bold">
-                  <MessageCircle size={14} className="text-green-500" /> WhatsApp: {selectedSede.whatsapp || 'Sin WhatsApp'}
-               </div>
+              <div className="pt-6 border-t border-slate-50 space-y-3 relative z-10">
+                 <div className="flex items-center gap-3 text-slate-600 text-[11px] font-bold">
+                    <Phone size={14} className="text-brand-secondary" /> {selectedSede.phone || 'Sin teléfono'}
+                 </div>
+                 <div className="flex items-center gap-3 text-slate-600 text-[11px] font-bold">
+                    <MessageCircle size={14} className="text-green-500" /> WhatsApp: {selectedSede.whatsapp || 'Sin WhatsApp'}
+                 </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="lg:col-span-8">
-          <div className="bg-white rounded-[3.5rem] border border-slate-100 clinical-shadow overflow-hidden flex flex-col">
-            <div className="p-8 border-b border-slate-50 flex items-center justify-between">
-              <h3 className="font-ubuntu font-bold text-xl text-brand-navy flex items-center gap-2">
-                <Clock className="text-brand-secondary" size={20} /> Turnos de Atención
-              </h3>
-              <button onClick={() => copyToWorkDays('Lunes')} className="px-4 py-2 bg-slate-50 text-slate-500 text-[10px] font-bold rounded-xl hover:bg-brand-secondary/10 hover:text-brand-secondary transition-all flex items-center gap-2 uppercase tracking-widest">
-                <Copy size={12} /> Copiar Lunes a Viernes
-              </button>
-            </div>
+          <div className="lg:col-span-8">
+            <div className="bg-white rounded-[3.5rem] border border-slate-100 clinical-shadow overflow-hidden flex flex-col">
+              <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+                <h3 className="font-ubuntu font-bold text-xl text-brand-navy flex items-center gap-2">
+                  <Clock className="text-brand-secondary" size={20} /> Turnos de Atención
+                </h3>
+                <button onClick={() => copyToWorkDays('Lunes')} className="px-4 py-2 bg-slate-50 text-slate-500 text-[10px] font-bold rounded-xl hover:bg-brand-secondary/10 hover:text-brand-secondary transition-all flex items-center gap-2 uppercase tracking-widest">
+                  <Copy size={12} /> Copiar Lunes a Viernes
+                </button>
+              </div>
 
-            <div className="divide-y divide-slate-50">
-              {DAYS.map(day => {
-                const config = localAvailability[day] || { isOpen: false, intervals: [] };
-                return (
-                  <div key={day} className={`p-8 transition-all flex flex-col sm:flex-row gap-6 ${!config.isOpen ? 'bg-slate-50/30' : 'hover:bg-slate-50/10'}`}>
-                    <div className="w-32 flex flex-col gap-2">
-                      <span className={`text-lg font-ubuntu font-bold ${config.isOpen ? 'text-brand-navy' : 'text-slate-300'}`}>{day}</span>
-                      <button 
-                        onClick={() => handleToggleDay(day)}
-                        className={`text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5 transition-colors ${config.isOpen ? 'text-brand-secondary' : 'text-slate-300'}`}
-                      >
-                        {config.isOpen ? <CheckCircle size={14} /> : <CalendarOff size={14} />}
-                        {config.isOpen ? 'Atendiendo' : 'Cerrado'}
-                      </button>
-                    </div>
+              <div className="divide-y divide-slate-50">
+                {DAYS.map(day => {
+                  const config = localAvailability[day] || { isOpen: false, intervals: [] };
+                  return (
+                    <div key={day} className={`p-8 transition-all flex flex-col sm:flex-row gap-6 ${!config.isOpen ? 'bg-slate-50/30' : 'hover:bg-slate-50/10'}`}>
+                      <div className="w-32 flex flex-col gap-2">
+                        <span className={`text-lg font-ubuntu font-bold ${config.isOpen ? 'text-brand-navy' : 'text-slate-300'}`}>{day}</span>
+                        <button 
+                          onClick={() => handleToggleDay(day)}
+                          className={`text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5 transition-colors ${config.isOpen ? 'text-brand-secondary' : 'text-slate-300'}`}
+                        >
+                          {config.isOpen ? <CheckCircle size={14} /> : <CalendarOff size={14} />}
+                          {config.isOpen ? 'Atendiendo' : 'Cerrado'}
+                        </button>
+                      </div>
 
-                    <div className="flex-1 space-y-4">
-                      {config.isOpen ? (
-                        <div className="flex flex-wrap gap-3">
-                          {config.intervals.map((interval, idx) => (
-                            <div key={idx} className="flex items-center gap-3 bg-white border border-slate-100 pl-4 pr-2 py-2 rounded-2xl shadow-sm hover:border-brand-secondary transition-all group animate-fade-in">
-                              <div className="flex items-center gap-2">
-                                <input 
-                                  type="time" 
-                                  value={interval.start}
-                                  onChange={(e) => updateInterval(day, idx, 'start', e.target.value)}
-                                  className="bg-transparent border-none text-xs font-bold text-brand-navy p-0 focus:ring-0 w-16" 
-                                />
-                                <span className="text-slate-200 text-[10px]">—</span>
-                                <input 
-                                  type="time" 
-                                  value={interval.end}
-                                  onChange={(e) => updateInterval(day, idx, 'end', e.target.value)}
-                                  className="bg-transparent border-none text-xs font-bold text-brand-navy p-0 focus:ring-0 w-16" 
-                                />
+                      <div className="flex-1 space-y-4">
+                        {config.isOpen ? (
+                          <div className="flex flex-wrap gap-3">
+                            {config.intervals.map((interval, idx) => (
+                              <div key={idx} className="flex items-center gap-3 bg-white border border-slate-100 pl-4 pr-2 py-2 rounded-2xl shadow-sm hover:border-brand-secondary transition-all group animate-fade-in">
+                                <div className="flex items-center gap-2">
+                                  <input 
+                                    type="time" 
+                                    value={interval.start}
+                                    onChange={(e) => updateInterval(day, idx, 'start', e.target.value)}
+                                    className="bg-transparent border-none text-xs font-bold text-brand-navy p-0 focus:ring-0 w-16" 
+                                  />
+                                  <span className="text-slate-200 text-[10px]">—</span>
+                                  <input 
+                                    type="time" 
+                                    value={interval.end}
+                                    onChange={(e) => updateInterval(day, idx, 'end', e.target.value)}
+                                    className="bg-transparent border-none text-xs font-bold text-brand-navy p-0 focus:ring-0 w-16" 
+                                  />
+                                </div>
+                                <button 
+                                  onClick={() => removeInterval(day, idx)}
+                                  className="text-slate-300 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-all"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
                               </div>
-                              <button 
-                                onClick={() => removeInterval(day, idx)}
-                                className="text-slate-300 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-all"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          ))}
-                          <button 
-                            onClick={() => addInterval(day)}
-                            className="w-10 h-10 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 hover:border-brand-secondary hover:text-brand-secondary hover:bg-brand-lightSecondary transition-all"
-                          >
-                            <Plus size={20} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="h-20 flex items-center border border-dashed border-slate-200 rounded-3xl justify-center bg-slate-100/30">
-                           <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest flex items-center gap-2">
-                             <CalendarOff size={14} /> Sin turnos disponibles
-                           </p>
-                        </div>
-                      )}
+                            ))}
+                            <button 
+                              onClick={() => addInterval(day)}
+                              className="w-10 h-10 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 hover:border-brand-secondary hover:text-brand-secondary hover:bg-brand-lightSecondary transition-all"
+                            >
+                              <Plus size={20} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="h-20 flex items-center border border-dashed border-slate-200 rounded-3xl justify-center bg-slate-100/30">
+                             <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest flex items-center gap-2">
+                               <CalendarOff size={14} /> Sin turnos disponibles
+                             </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {showSedeModal && (
         <div className="fixed inset-0 z-[100] bg-brand-navy/60 backdrop-blur-md flex items-center justify-center p-6">
@@ -394,13 +408,13 @@ const ScheduleManager: React.FC<ScheduleManagerProps> = ({ sedes, onUpdateSede, 
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
                       <Phone size={12} className="text-brand-accent" /> Teléfono
                     </label>
-                    <input required className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-secondary font-bold text-xs outline-none shadow-inner" value={sedeForm.phone} onChange={e => setSedeForm({...sedeForm, phone: e.target.value})} placeholder="01 234 5678" />
+                    <input className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-secondary font-bold text-xs outline-none shadow-inner" value={sedeForm.phone} onChange={e => setSedeForm({...sedeForm, phone: e.target.value})} placeholder="01 234 5678" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
                       <MessageCircle size={12} className="text-green-500" /> WhatsApp
                     </label>
-                    <input required className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-secondary font-bold text-xs outline-none shadow-inner" value={sedeForm.whatsapp} onChange={e => setSedeForm({...sedeForm, whatsapp: e.target.value})} placeholder="51987654321" />
+                    <input className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-brand-secondary font-bold text-xs outline-none shadow-inner" value={sedeForm.whatsapp} onChange={e => setSedeForm({...sedeForm, whatsapp: e.target.value})} placeholder="51987654321" />
                   </div>
                 </div>
               </div>

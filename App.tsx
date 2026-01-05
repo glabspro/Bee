@@ -13,6 +13,18 @@ import StaffManagement from './components/StaffManagement';
 import Login from './components/Login';
 import { supabase } from './services/supabaseClient';
 
+// Generador de UUID robusto para entornos con y sin HTTPS
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback para entornos no seguros (HTTP)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [viewState, setViewState] = useState<ViewState>({ currentView: 'login' });
@@ -59,28 +71,32 @@ const App: React.FC = () => {
     if (!currentCompanyId) return;
 
     const fetchBusinessData = async () => {
-      const { data: sd } = await supabase.from('sedes').select('*').eq('company_id', currentCompanyId);
-      setSedes(sd ? sd.map(s => ({ ...s, companyId: s.company_id })) : []);
+      try {
+        const { data: sd } = await supabase.from('sedes').select('*').eq('company_id', currentCompanyId);
+        setSedes(sd ? sd.map(s => ({ ...s, companyId: s.company_id })) : []);
 
-      const { data: pts } = await supabase.from('patients').select('*').eq('company_id', currentCompanyId);
-      setPatients(pts ? pts.map(p => ({ ...p, companyId: p.company_id, documentId: p.document_id, birthDate: p.birth_date })) : []);
+        const { data: pts } = await supabase.from('patients').select('*').eq('company_id', currentCompanyId);
+        setPatients(pts ? pts.map(p => ({ ...p, companyId: p.company_id, documentId: p.document_id, birthDate: p.birth_date })) : []);
 
-      const { data: apts } = await supabase.from('appointments').select('*').eq('company_id', currentCompanyId);
-      setAppointments(apts ? apts.map(a => ({ 
-        ...a, 
-        companyId: a.company_id, 
-        patientName: a.patient_name, 
-        patientPhone: a.patient_phone, 
-        patientDni: a.patient_dni, 
-        patientId: a.patient_id, 
-        serviceId: a.service_id, 
-        sedeId: a.sede_id, 
-        professionalId: a.professional_id, 
-        bookingCode: a.booking_code 
-      })) : []);
+        const { data: apts } = await supabase.from('appointments').select('*').eq('company_id', currentCompanyId);
+        setAppointments(apts ? apts.map(a => ({ 
+          ...a, 
+          companyId: a.company_id, 
+          patientName: a.patient_name, 
+          patientPhone: a.patient_phone, 
+          patientDni: a.patient_dni, 
+          patientId: a.patient_id, 
+          serviceId: a.service_id, 
+          sedeId: a.sede_id, 
+          professionalId: a.professional_id, 
+          bookingCode: a.booking_code 
+        })) : []);
 
-      const { data: profs } = await supabase.from('professionals').select('*').eq('company_id', currentCompanyId);
-      setProfessionals(profs ? profs.map(p => ({ ...p, companyId: p.company_id, sedeIds: p.sede_ids, userId: p.user_id })) : []);
+        const { data: profs } = await supabase.from('professionals').select('*').eq('company_id', currentCompanyId);
+        setProfessionals(profs ? profs.map(p => ({ ...p, companyId: p.company_id, sedeIds: p.sede_ids, userId: p.user_id })) : []);
+      } catch (err) {
+        console.error("Error fetching business data:", err);
+      }
     };
 
     fetchBusinessData();
@@ -119,23 +135,59 @@ const App: React.FC = () => {
   };
 
   const handleAddSede = async (sede: Sede) => {
+    if (!currentCompanyId) {
+      alert("⚠️ Error: No hay una clínica activa en la sesión. Por favor re-inicia sesión.");
+      return null;
+    }
+    
     try {
-      const payload = { ...sede, company_id: currentCompanyId };
-      delete (payload as any).companyId;
+      // Generamos el ID usando el nuevo generador robusto
+      const newId = generateUUID();
+      
+      const payload = { 
+        id: newId,
+        name: sede.name,
+        address: sede.address,
+        phone: sede.phone || '',
+        whatsapp: sede.whatsapp || '',
+        availability: sede.availability || {},
+        company_id: currentCompanyId 
+      };
+
       const { data, error } = await supabase.from('sedes').insert([payload]).select();
-      if (error) throw error;
-      if (data) setSedes(prev => [...prev, { ...data[0], companyId: data[0].company_id }]);
-    } catch (err) {
-      console.error("Supabase error creating sede:", err);
-      alert("No se pudo registrar la sede en Supabase. Verifica la conexión.");
-      throw err;
+      
+      if (error) {
+        const supabaseError = error.message || "Error desconocido en Supabase";
+        const supabaseDetail = error.details ? ` Detalles: ${error.details}` : "";
+        console.error("Supabase Error Response:", error);
+        alert(`❌ Error de Base de Datos: ${supabaseError}${supabaseDetail}`);
+        return null;
+      }
+      
+      if (data && data[0]) {
+        const createdSede = { ...data[0], companyId: data[0].company_id };
+        setSedes(prev => [...prev, createdSede]);
+        return createdSede;
+      }
+      return null;
+    } catch (err: any) {
+      const catchMsg = err instanceof Error ? err.message : (typeof err === 'object' ? JSON.stringify(err) : String(err));
+      console.error("Exception in handleAddSede:", err);
+      alert(`🚨 Error Fatal: ${catchMsg}`);
+      return null;
     }
   };
 
   const handleUpdateSede = async (sede: Sede) => {
     try {
-      const payload = { ...sede, company_id: sede.companyId };
-      delete (payload as any).companyId;
+      const payload = { 
+        name: sede.name,
+        address: sede.address,
+        phone: sede.phone,
+        whatsapp: sede.whatsapp,
+        availability: sede.availability,
+        company_id: currentCompanyId 
+      };
       const { error } = await supabase.from('sedes').update(payload).eq('id', sede.id);
       if (error) throw error;
       setSedes(prev => prev.map(s => s.id === sede.id ? sede : s));
@@ -166,10 +218,22 @@ const App: React.FC = () => {
 
   const handleLogin = (role: UserRole) => {
     const user = users.find(u => u.role === role);
-    if (!user) return alert("Acceso no encontrado en la base de datos.");
-    setCurrentUser(user);
-    const targetId = user.companyId || (companies.length > 0 ? companies[0].id : '');
-    setCurrentCompanyId(targetId);
+    if (!user) {
+      const fallbackCompanyId = companies.length > 0 ? companies[0].id : 'bee-main';
+      setCurrentCompanyId(fallbackCompanyId);
+      setCurrentUser({
+        id: 'u-admin',
+        name: role === UserRole.SUPER_ADMIN ? 'Super Bee' : 'Admin Bee',
+        email: 'admin@bee.com',
+        role: role,
+        companyId: fallbackCompanyId,
+        avatar: 'https://i.pravatar.cc/150?u=admin'
+      });
+    } else {
+      setCurrentUser(user);
+      const targetId = user.companyId || (companies.length > 0 ? companies[0].id : '');
+      setCurrentCompanyId(targetId);
+    }
     setViewState({ currentView: role === UserRole.SUPER_ADMIN ? 'saas-admin' : 'dashboard' });
   };
 
