@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Calendar, 
   Clock, 
@@ -18,7 +18,8 @@ import {
   CheckCircle2,
   Loader2,
   CalendarCheck,
-  Zap
+  Zap,
+  AlertCircle
 } from 'lucide-react';
 import { Sede, Company } from '../types';
 
@@ -46,6 +47,16 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
   });
 
   const primaryColor = company.primaryColor || '#00BFA5';
+
+  // Validación de teléfono: Debe tener exactamente 9 dígitos para Perú
+  const isPhoneValid = useMemo(() => {
+    const digits = booking.patientPhone.replace(/\D/g, '');
+    return digits.length === 9;
+  }, [booking.patientPhone]);
+
+  const isInfoStepComplete = useMemo(() => {
+    return booking.patientName.trim().length > 2 && isPhoneValid;
+  }, [booking.patientName, isPhoneValid]);
 
   const handleConfirmBooking = async () => {
     setIsSubmitting(true);
@@ -98,7 +109,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
       </nav>
 
       <main className="flex-1 flex flex-col items-center">
-        {/* Hero Section - Ajustada para mejor lectura en móvil */}
+        {/* Hero Section */}
         <div className="w-full h-[280px] md:h-[350px] relative overflow-hidden flex items-center justify-center bg-brand-navy">
            <img 
             src={company.portalHero} 
@@ -107,7 +118,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
            />
            <div className="absolute inset-0 bg-gradient-to-b from-brand-navy/20 via-brand-navy/40 to-[#F8FAFC]"></div>
            <div className="relative z-10 text-center px-6 max-w-2xl animate-fade-in">
-              <h1 className="text-white text-4xl md:text-6xl font-ubuntu font-bold tracking-tight drop-shadow-xl">
+              <h1 className="text-white text-4xl md:text-6xl font-ubuntu font-bold tracking-tight drop-shadow-xl text-balance">
                 Cuidado experto <br/> para tus <span className="text-brand-primary italic">pies</span>
               </h1>
               <p className="text-white/80 font-medium text-sm md:text-lg mt-4 max-w-lg mx-auto leading-relaxed">
@@ -116,16 +127,16 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
            </div>
         </div>
 
-        {/* Flujo Principal - Contenedor Centrado */}
+        {/* Flujo Principal */}
         <div className="max-w-4xl w-full -mt-16 relative z-20 px-4 pb-20">
             
-            {/* Indicador de Progreso Odoo Style - Scrollable en móvil */}
+            {/* Indicador de Progreso Odoo Style */}
             <div className="flex items-center justify-between gap-2 mb-8 overflow-x-auto no-scrollbar py-5 bg-white/95 backdrop-blur-md rounded-[2rem] px-6 shadow-[0_15px_35px_rgba(0,0,0,0.05)] border border-white">
             {steps.map((s, idx) => (
                 <React.Fragment key={s}>
                     <div className="flex flex-col items-center gap-1.5 shrink-0">
                         <div 
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-bold transition-all duration-500 ${
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${
                             idx < currentIdx ? 'bg-green-100 text-brand-primary' : 
                             idx === currentIdx ? 'text-white shadow-lg scale-110 ring-4 ring-brand-primary/10' : 
                             'bg-slate-100 text-slate-300'
@@ -142,7 +153,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
             ))}
             </div>
 
-            {/* Card de Contenido con estilo Odoo */}
+            {/* Card de Contenido */}
             <div className="bg-white rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.05)] border border-slate-50 overflow-hidden flex flex-col min-h-[500px]">
                 
                 {/* Paso 1: Sedes */}
@@ -185,7 +196,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                                     className="mt-8 w-full py-4 rounded-2xl text-white font-bold text-xs uppercase tracking-widest shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
                                     style={{ backgroundColor: primaryColor }}
                                   >
-                                    Seleccionar Sede <ArrowRight size={14} />
+                                    Seleccionar <ArrowRight size={14} />
                                   </button>
                               </div>
                             </div>
@@ -206,13 +217,13 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                   <div className="p-8 md:p-14 space-y-10 animate-fade-in max-w-xl mx-auto w-full flex-1 flex flex-col justify-center">
                     <div className="text-center">
                       <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Tus Datos</h2>
-                      <p className="text-slate-400 text-sm font-medium mt-2">Ingresa tu información para confirmar tu cita de <b>Podología Integral</b>.</p>
+                      <p className="text-slate-400 text-sm font-medium mt-2">Ingresa tu información para tu atención en <b>Podología Integral</b>.</p>
                     </div>
 
-                    <div className="space-y-5">
+                    <div className="space-y-6">
                         <div className="space-y-2">
                             <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                              <UserIcon size={12} style={{ color: primaryColor }} /> Nombre Completo
+                              <UserIcon size={12} style={{ color: primaryColor }} /> Nombre Completo <span className="text-red-400">*</span>
                             </label>
                             <input 
                               type="text" 
@@ -227,28 +238,38 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                           <div className="space-y-2">
                               <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                <Phone size={12} style={{ color: primaryColor }} /> WhatsApp
+                                <Phone size={12} style={{ color: primaryColor }} /> WhatsApp <span className="text-red-400">*</span>
                               </label>
                               <div className="flex gap-2">
                                 <div className="bg-slate-50 px-4 py-4 rounded-2xl font-bold text-slate-400 shadow-inner flex items-center text-sm">+51</div>
                                 <input 
                                   type="tel" 
                                   value={booking.patientPhone} 
-                                  onChange={(e) => setBooking(prev => ({...prev, patientPhone: e.target.value}))} 
-                                  className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, '').slice(0, 9);
+                                    setBooking(prev => ({...prev, patientPhone: val}));
+                                  }} 
+                                  className={`flex-1 px-6 py-4 bg-slate-50 border-2 rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all ${
+                                    booking.patientPhone.length > 0 && !isPhoneValid ? 'border-red-200' : 'border-transparent'
+                                  }`} 
                                   style={{ '--tw-ring-color': primaryColor } as any} 
                                   placeholder="987654321" 
                                 />
                               </div>
+                              {booking.patientPhone.length > 0 && !isPhoneValid && (
+                                <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest mt-1 ml-1 flex items-center gap-1">
+                                  <AlertCircle size={10} /> El número debe tener 9 dígitos
+                                </p>
+                              )}
                           </div>
                           <div className="space-y-2">
                               <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                <IdCard size={12} style={{ color: primaryColor }} /> DNI
+                                <IdCard size={12} style={{ color: primaryColor }} /> DNI <span className="text-slate-300 font-normal italic lowercase">(Opcional)</span>
                               </label>
                               <input 
                                 type="text" 
                                 value={booking.patientDni} 
-                                onChange={(e) => setBooking(prev => ({...prev, patientDni: e.target.value}))} 
+                                onChange={(e) => setBooking(prev => ({...prev, patientDni: e.target.value.replace(/\D/g, '').slice(0, 12)}))} 
                                 className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
                                 style={{ '--tw-ring-color': primaryColor } as any} 
                                 placeholder="8 dígitos" 
@@ -258,9 +279,9 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
 
                         <div className="pt-6">
                           <button 
-                            disabled={!booking.patientName || !booking.patientPhone} 
+                            disabled={!isInfoStepComplete} 
                             onClick={() => setStep('schedule')} 
-                            className="w-full py-5 text-white rounded-[1.5rem] font-bold text-base shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3" 
+                            className="w-full py-5 text-white rounded-[1.5rem] font-bold text-base shadow-xl transition-all active:scale-95 disabled:opacity-30 disabled:grayscale flex items-center justify-center gap-3" 
                             style={{ backgroundColor: primaryColor }}
                           >
                             Ver Disponibilidad <ArrowRight size={18} />
@@ -271,7 +292,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                           onClick={() => setStep('sede')} 
                           className="w-full text-slate-300 font-bold text-[9px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:text-brand-navy transition-colors mt-4"
                         >
-                          <ArrowLeft size={12} /> Regresar a sedes
+                          <ArrowLeft size={12} /> Cambiar sede seleccionada
                         </button>
                     </div>
                   </div>
@@ -281,7 +302,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                 {step === 'schedule' && (
                   <div className="p-8 md:p-14 space-y-10 animate-fade-in max-w-2xl mx-auto w-full text-center flex-1 flex flex-col justify-center">
                     <div className="text-center">
-                      <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Horario de Atención</h2>
+                      <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Horario Disponible</h2>
                       <p className="text-slate-400 text-sm font-medium mt-2">Elige el día y la hora de tu preferencia.</p>
                     </div>
 
@@ -385,18 +406,18 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                             <><MessageCircle size={28} /> Finalizar en WhatsApp</>
                           )}
                       </button>
-                      <p className="text-[9px] text-slate-400 font-bold uppercase text-center tracking-widest leading-relaxed">
-                         Al confirmar se enviará una solicitud directa a la sede para validar disponibilidad de <b>Podología Integral</b>.
+                      <p className="text-[9px] text-slate-400 font-bold uppercase text-center tracking-widest leading-relaxed px-4">
+                         Al confirmar se enviará una solicitud directa a la sede para validar disponibilidad de su atención de <b>Podología Integral</b>.
                       </p>
                     </div>
                   </div>
                 )}
             </div>
 
-            {/* Footer de Marca - Odoo Style */}
+            {/* Footer de Marca */}
             <div className="mt-12 text-center animate-fade-in">
               <div className="inline-flex flex-col items-center gap-4">
-                <p className="text-slate-300 text-[10px] font-bold uppercase tracking-[0.4em] mb-1">Healthcare Management Ecosystem</p>
+                <p className="text-slate-300 text-[10px] font-bold uppercase tracking-[0.4em] mb-1 text-balance px-6">Healthcare Management Ecosystem</p>
                 <a 
                   href="https://gaorsystem.vercel.app/" 
                   target="_blank" 
