@@ -13,8 +13,6 @@ import {
   IdCard,
   Navigation,
   ChevronRight,
-  Info,
-  ExternalLink,
   CheckCircle2,
   Loader2,
   CalendarCheck,
@@ -55,7 +53,8 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
   }, [booking.patientPhone]);
 
   const isInfoStepComplete = useMemo(() => {
-    return booking.patientName.trim().length > 2 && isPhoneValid;
+    // Nombre obligatorio (mínimo 3 letras) y Teléfono obligatorio (9 dígitos)
+    return booking.patientName.trim().length >= 3 && isPhoneValid;
   }, [booking.patientName, isPhoneValid]);
 
   const handleConfirmBooking = async () => {
@@ -109,26 +108,26 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
       </nav>
 
       <main className="flex-1 flex flex-col items-center">
-        {/* Hero Section */}
-        <div className="w-full h-[280px] md:h-[350px] relative overflow-hidden flex items-center justify-center bg-brand-navy">
+        {/* Hero Section - Centrado Total para móvil */}
+        <div className="w-full h-[320px] md:h-[400px] relative overflow-hidden flex items-center justify-center bg-brand-navy">
            <img 
             src={company.portalHero} 
-            className="w-full h-full object-cover opacity-50 scale-105" 
+            className="w-full h-full object-cover opacity-40 scale-105" 
             alt="Clinic Hero" 
            />
-           <div className="absolute inset-0 bg-gradient-to-b from-brand-navy/20 via-brand-navy/40 to-[#F8FAFC]"></div>
-           <div className="relative z-10 text-center px-6 max-w-2xl animate-fade-in">
-              <h1 className="text-white text-4xl md:text-6xl font-ubuntu font-bold tracking-tight drop-shadow-xl text-balance">
+           <div className="absolute inset-0 bg-gradient-to-b from-brand-navy/30 via-brand-navy/50 to-[#F8FAFC]"></div>
+           <div className="relative z-10 text-center px-6 max-w-2xl animate-fade-in flex flex-col items-center">
+              <h1 className="text-white text-4xl md:text-6xl font-ubuntu font-bold tracking-tight drop-shadow-2xl text-balance leading-[1.1]">
                 Cuidado experto <br/> para tus <span className="text-brand-primary italic">pies</span>
               </h1>
-              <p className="text-white/80 font-medium text-sm md:text-lg mt-4 max-w-lg mx-auto leading-relaxed">
+              <p className="text-white/90 font-medium text-sm md:text-xl mt-6 max-w-md mx-auto leading-relaxed drop-shadow-md">
                 Agenda tu atención profesional hoy mismo desde tu celular.
               </p>
            </div>
         </div>
 
-        {/* Flujo Principal */}
-        <div className="max-w-4xl w-full -mt-16 relative z-20 px-4 pb-20">
+        {/* Flujo Principal - Contenedor Centrado */}
+        <div className="max-w-4xl w-full -mt-12 relative z-20 px-4 pb-20">
             
             {/* Indicador de Progreso Odoo Style */}
             <div className="flex items-center justify-between gap-2 mb-8 overflow-x-auto no-scrollbar py-5 bg-white/95 backdrop-blur-md rounded-[2rem] px-6 shadow-[0_15px_35px_rgba(0,0,0,0.05)] border border-white">
@@ -136,7 +135,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                 <React.Fragment key={s}>
                     <div className="flex flex-col items-center gap-1.5 shrink-0">
                         <div 
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-bold transition-all duration-500 ${
                             idx < currentIdx ? 'bg-green-100 text-brand-primary' : 
                             idx === currentIdx ? 'text-white shadow-lg scale-110 ring-4 ring-brand-primary/10' : 
                             'bg-slate-100 text-slate-300'
@@ -160,7 +159,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                 {step === 'sede' && (
                   <div className="p-8 md:p-14 space-y-10 animate-fade-in flex-1">
                       <div className="text-center">
-                        <h2 className="text-3xl font-ubuntu font-bold text-brand-navy text-balance">¿Dónde te atenderás?</h2>
+                        <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">¿Dónde te atenderás?</h2>
                         <p className="text-slate-400 text-sm font-medium mt-2">Selecciona la sede más cercana a ti.</p>
                       </div>
 
@@ -196,7 +195,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                                     className="mt-8 w-full py-4 rounded-2xl text-white font-bold text-xs uppercase tracking-widest shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
                                     style={{ backgroundColor: primaryColor }}
                                   >
-                                    Seleccionar <ArrowRight size={14} />
+                                    Elegir Sede <ArrowRight size={14} />
                                   </button>
                               </div>
                             </div>
@@ -222,7 +221,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
 
                     <div className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
                               <UserIcon size={12} style={{ color: primaryColor }} /> Nombre Completo <span className="text-red-400">*</span>
                             </label>
                             <input 
@@ -237,7 +236,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                           <div className="space-y-2">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
                                 <Phone size={12} style={{ color: primaryColor }} /> WhatsApp <span className="text-red-400">*</span>
                               </label>
                               <div className="flex gap-2">
@@ -257,13 +256,13 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                                 />
                               </div>
                               {booking.patientPhone.length > 0 && !isPhoneValid && (
-                                <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest mt-1 ml-1 flex items-center gap-1">
-                                  <AlertCircle size={10} /> El número debe tener 9 dígitos
+                                <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest mt-2 ml-1 flex items-center gap-1 animate-pulse">
+                                  <AlertCircle size={12} /> El número debe tener 9 dígitos
                                 </p>
                               )}
                           </div>
                           <div className="space-y-2">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
                                 <IdCard size={12} style={{ color: primaryColor }} /> DNI <span className="text-slate-300 font-normal italic lowercase">(Opcional)</span>
                               </label>
                               <input 
@@ -272,7 +271,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                                 onChange={(e) => setBooking(prev => ({...prev, patientDni: e.target.value.replace(/\D/g, '').slice(0, 12)}))} 
                                 className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
                                 style={{ '--tw-ring-color': primaryColor } as any} 
-                                placeholder="8 dígitos" 
+                                placeholder="Opcional" 
                               />
                           </div>
                         </div>
@@ -290,9 +289,9 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                         
                         <button 
                           onClick={() => setStep('sede')} 
-                          className="w-full text-slate-300 font-bold text-[9px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:text-brand-navy transition-colors mt-4"
+                          className="w-full text-slate-300 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:text-brand-navy transition-colors mt-4"
                         >
-                          <ArrowLeft size={12} /> Cambiar sede seleccionada
+                          <ArrowLeft size={12} /> Regresar a sedes
                         </button>
                     </div>
                   </div>
@@ -344,7 +343,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                         >
                           Confirmar Selección <ArrowRight size={18} />
                         </button>
-                        <button onClick={() => setStep('info')} className="mt-6 text-slate-300 font-bold text-[9px] uppercase tracking-widest hover:text-brand-navy transition-all">Regresar a mis datos</button>
+                        <button onClick={() => setStep('info')} className="mt-6 text-slate-300 font-bold text-[10px] uppercase tracking-widest hover:text-brand-navy transition-all">Regresar a mis datos</button>
                       </div>
                     </div>
                   </div>
@@ -406,7 +405,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                             <><MessageCircle size={28} /> Finalizar en WhatsApp</>
                           )}
                       </button>
-                      <p className="text-[9px] text-slate-400 font-bold uppercase text-center tracking-widest leading-relaxed px-4">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase text-center tracking-widest leading-relaxed px-4">
                          Al confirmar se enviará una solicitud directa a la sede para validar disponibilidad de su atención de <b>Podología Integral</b>.
                       </p>
                     </div>
