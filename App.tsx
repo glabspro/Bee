@@ -83,20 +83,47 @@ const App: React.FC = () => {
           });
         }
 
-        const [sData, aData, pData, profData, userData] = await Promise.all([
+        const [sData, aData, pData, profData, userData, hData] = await Promise.all([
           supabase.from('sedes').select('*'),
           supabase.from('appointments').select('*'),
           supabase.from('patients').select('*'),
           supabase.from('professionals').select('*'),
-          supabase.from('users').select('*')
+          supabase.from('users').select('*'),
+          supabase.from('clinical_history').select('*')
         ]);
 
         if (sData.data) setSedes(sData.data);
-        if (pData.data) setPatients(pData.data.map(p => ({ ...p, documentId: p.document_id, birthDate: p.birth_date, history: [] })));
-        if (profData.data) setProfessionals(profData.data.map(p => ({ ...p, sedeIds: p.sede_ids || [], userId: p.user_id })));
         if (userData.data) setUsers(userData.data.map(u => ({ 
           id: u.id, name: u.name, email: u.email, accessKey: u.access_key, role: u.role as UserRole, sedeIds: u.sede_ids || [], companyId: u.company_id, avatar: u.avatar || `https://i.pravatar.cc/150?u=${u.id}`
         })));
+        if (profData.data) setProfessionals(profData.data.map(p => ({ ...p, sedeIds: p.sede_ids || [], userId: p.user_id })));
+        
+        // Mapear historial clínico a pacientes
+        if (pData.data) {
+          const historyMap: Record<string, ClinicalHistoryEntry[]> = {};
+          if (hData.data) {
+            hData.data.forEach(h => {
+              if (!historyMap[h.patient_id]) historyMap[h.patient_id] = [];
+              historyMap[h.patient_id].push({
+                id: h.id,
+                date: h.date,
+                diagnosis: h.diagnosis,
+                notes: h.notes,
+                recommendations: h.recommendations,
+                professionalId: h.professional_id,
+                appointmentId: h.appointment_id
+              });
+            });
+          }
+
+          setPatients(pData.data.map(p => ({ 
+            ...p, 
+            documentId: p.document_id, 
+            birthDate: p.birth_date, 
+            history: (historyMap[p.id] || []).sort((a,b) => b.date.localeCompare(a.date))
+          })));
+        }
+
         if (aData.data) setAppointments(aData.data.map(a => ({
           ...a, patientName: a.patient_name, patientPhone: a.patient_phone, patientDni: a.patient_dni, patientId: a.patient_id, serviceId: a.service_id, sedeId: a.sede_id, professionalId: a.professional_id, bookingCode: a.booking_code, companyId: a.company_id
         })));
@@ -115,7 +142,6 @@ const App: React.FC = () => {
     const appointmentId = generateUUID();
 
     try {
-      // 1. Registrar Paciente (Si no existe, se crea uno nuevo)
       const { error: pError } = await supabase.from('patients').insert([{
         id: patientId,
         name: bookingData.patientName,
@@ -124,9 +150,8 @@ const App: React.FC = () => {
         document_id: bookingData.patientDni || null,
         company_id: clinicConfig.id
       }]);
-      if (pError) console.warn("Nota: Paciente posiblemente ya existe o error menor:", pError);
+      if (pError) console.warn("Paciente existente o error menor:", pError);
 
-      // 2. Registrar Cita
       const { error: aError } = await supabase.from('appointments').insert([{
         id: appointmentId,
         patient_id: patientId,
@@ -143,7 +168,6 @@ const App: React.FC = () => {
 
       if (aError) throw aError;
 
-      // Actualizar estado local
       const newApt: Appointment = {
         id: appointmentId,
         patientId,
@@ -209,7 +233,23 @@ const App: React.FC = () => {
   };
 
   const handleAddHistoryEntry = async (pid: string, e: ClinicalHistoryEntry) => {
-    const { error } = await supabase.from('clinical_history').insert([{ id: e.id, patient_id: pid, date: e.date, diagnosis: e.diagnosis, notes: e.notes, recommendations: e.recommendations }]);
+    const { error } = await supabase.from('clinical_history').insert([{ 
+      id: e.id, 
+      patient_id: pid, 
+      date: e.date, 
+      diagnosis: e.diagnosis, 
+      notes: e.notes, 
+      recommendations: e.recommendations,
+      appointment_id: e.appointmentId,
+      professional_id: e.professionalId
+    }]);
+    
+    // Si la entrada viene de una cita, marcarla como ATENDIDA
+    if (e.appointmentId) {
+      await supabase.from('appointments').update({ status: AppointmentStatus.ATTENDED }).eq('id', e.appointmentId);
+      setAppointments(prev => prev.map(a => a.id === e.appointmentId ? { ...a, status: AppointmentStatus.ATTENDED } : a));
+    }
+
     if (!error) setPatients(prev => prev.map(p => p.id === pid ? { ...p, history: [e, ...p.history] } : p));
   };
 
@@ -241,6 +281,14 @@ const App: React.FC = () => {
           {viewState.currentView === 'patients' && <PatientDirectory patients={patients} onAddPatient={handleAddPatient} onAddHistoryEntry={handleAddHistoryEntry} onScheduleSessions={(f) => setAppointments(p => [...p, ...f])} sedes={filteredSedes} professionals={filteredProfessionals} />}
           {viewState.currentView === 'schedules' && <ScheduleManager sedes={filteredSedes} onUpdateSede={async (s) => { const { error } = await supabase.from('sedes').update(s).eq('id', s.id); if(!error) setSedes(p => p.map(it => it.id === s.id ? s : it)); }} onAddSede={handleAddSede} />}
           {viewState.currentView === 'staff-management' && <StaffManagement professionals={filteredProfessionals} users={users} sedes={filteredSedes} onAddProfessional={async (p) => { await supabase.from('professionals').insert(p); setProfessionals(prev => [...prev, p]); }} onAddUser={handleAddUser} currentCompanyId={clinicConfig.id} userRole={currentUser?.role} />}
+          {viewState.currentView === 'clinical-record' && viewState.activeAppointmentId && (
+            <ClinicalRecordForm 
+              appointment={appointments.find(a => a.id === viewState.activeAppointmentId)!}
+              onClose={() => setViewState({ currentView: 'appointments' })}
+              onSaveRecord={handleAddHistoryEntry}
+              onScheduleSessions={(f) => setAppointments(p => [...p, ...f])}
+            />
+          )}
           {viewState.currentView === 'saas-admin' as any && <SaasAdmin companies={[clinicConfig]} users={users} sedes={sedes} onAddCompany={() => {}} onUpdateCompany={handleUpdateCompany} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} userRole={currentUser?.role} currentCompanyId={clinicConfig.id} />}
         </main>
       </div>

@@ -5,7 +5,6 @@ import {
   Stethoscope, 
   ArrowLeft, 
   Save, 
-  PlusCircle, 
   Activity,
   AlertCircle,
   Sparkles,
@@ -14,9 +13,17 @@ import {
   Calendar,
   Clock,
   ChevronRight,
-  Plus,
+  ChevronLeft,
   Trash2,
-  RefreshCw
+  MapPin,
+  User,
+  Zap,
+  CheckCircle2,
+  ArrowRight,
+  IdCard,
+  FileSearch,
+  ExternalLink,
+  Plus
 } from 'lucide-react';
 import { Appointment, AppointmentStatus, ClinicalHistoryEntry } from '../types';
 import { summarizeClinicalNotes, suggestDiagnosis } from '../services/geminiService';
@@ -40,44 +47,58 @@ const ClinicalRecordForm: React.FC<ClinicalRecordFormProps> = ({
   onSaveRecord, 
   onScheduleSessions 
 }) => {
+  const [currentStep, setCurrentStep] = useState(1);
   const [diagnosis, setDiagnosis] = useState('');
   const [notes, setNotes] = useState('');
   const [recommendations, setRecommendations] = useState('');
   const [isTreatmentPlan, setIsTreatmentPlan] = useState(false);
   const [numSessions, setNumSessions] = useState(3);
+  const [frequency, setFrequency] = useState(7);
   const [sessions, setSessions] = useState<SessionDraft[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
 
-  // Generador automático de sesiones
+  const steps = [
+    { number: 1, title: 'Hallazgos', desc: 'Diagnóstico clínico', icon: FileSearch },
+    { number: 2, title: 'Procedimiento', desc: 'Acciones médicas', icon: Activity },
+    { number: 3, title: 'Plan (Opc)', desc: 'Seguimiento futuro', icon: Calendar }
+  ];
+
   useEffect(() => {
     if (isTreatmentPlan && sessions.length === 0) {
-      const drafts: SessionDraft[] = [];
-      const startDate = new Date();
-      for (let i = 1; i <= numSessions; i++) {
-        const nextDate = new Date(startDate);
-        nextDate.setDate(startDate.getDate() + (i * 7)); // Una semana de diferencia cada una
-        drafts.push({
-          id: `draft-${i}`,
-          date: nextDate.toISOString().split('T')[0],
-          time: appointment.time
-        });
-      }
-      setSessions(drafts);
+      generateDefaultSessions();
     }
-  }, [isTreatmentPlan, numSessions, appointment.time]);
+  }, [isTreatmentPlan]);
+
+  const generateDefaultSessions = () => {
+    const drafts: SessionDraft[] = [];
+    const startDate = new Date();
+    for (let i = 1; i <= numSessions; i++) {
+      const nextDate = new Date(startDate);
+      nextDate.setDate(startDate.getDate() + (i * frequency));
+      drafts.push({
+        id: `draft-${Date.now()}-${i}`,
+        date: nextDate.toISOString().split('T')[0],
+        time: appointment.time
+      });
+    }
+    setSessions(drafts);
+  };
 
   const handleAiAssistant = async () => {
     if (!notes || notes.length < 10) {
-      alert("Por favor ingrese más detalles para que la IA pueda analizarlos.");
+      alert("Por favor ingrese más detalles para que el asistente pueda analizarlos.");
       return;
     }
     setIsAiLoading(true);
     try {
       const summary = await summarizeClinicalNotes(notes);
       const aiSuggestions = await suggestDiagnosis(notes);
-      setRecommendations(prev => prev + (prev ? '\n\n' : '') + "--- Sugerencia IA ---\n" + summary);
-      if (aiSuggestions?.suggestions) {
-        setDiagnosis(prev => prev + (prev ? '\n' : '') + "Hallazgos IA: " + aiSuggestions.suggestions.join(', '));
+      
+      setRecommendations(prev => prev + (prev ? '\n\n' : '') + "💡 Recomendación IA:\n" + summary);
+      
+      if (aiSuggestions?.suggestions?.length > 0) {
+        if (!diagnosis) setDiagnosis(aiSuggestions.suggestions[0]);
+        else alert(`Sugerencia de diagnóstico: ${aiSuggestions.suggestions.join(', ')}`);
       }
     } catch (error) {
       console.error(error);
@@ -87,7 +108,12 @@ const ClinicalRecordForm: React.FC<ClinicalRecordFormProps> = ({
   };
 
   const handleSave = () => {
-    // 1. Guardar Entrada Histórica
+    if (!diagnosis || !notes) {
+      setCurrentStep(1);
+      alert("El diagnóstico y las notas de evolución son obligatorios.");
+      return;
+    }
+
     const entry: ClinicalHistoryEntry = {
       id: 'entry-' + Math.random().toString(36).substr(2, 9),
       date: new Date().toISOString().split('T')[0],
@@ -97,9 +123,9 @@ const ClinicalRecordForm: React.FC<ClinicalRecordFormProps> = ({
       recommendations,
       appointmentId: appointment.id
     };
+
     onSaveRecord(appointment.patientId || 'unknown', entry);
 
-    // 2. Si hay plan, crear citas futuras
     if (isTreatmentPlan && sessions.length > 0) {
       const futureApts: Appointment[] = sessions.map(s => ({
         id: 'apt-' + Math.random().toString(36).substr(2, 9),
@@ -114,31 +140,13 @@ const ClinicalRecordForm: React.FC<ClinicalRecordFormProps> = ({
         time: s.time,
         status: AppointmentStatus.CONFIRMED,
         bookingCode: 'BEE-PLAN-' + Math.random().toString(36).substr(2, 4).toUpperCase(),
-        notes: `Sesión de Seguimiento: Plan de Tratamiento iniciado el ${entry.date}`,
-        // Fix: Added missing companyId property to match the Appointment type
+        notes: `Plan iniciado el ${entry.date}`,
         companyId: appointment.companyId
       }));
       onScheduleSessions(futureApts);
     }
 
-    alert("Atención finalizada. Historial actualizado y sesiones agendadas.");
     onClose();
-  };
-
-  const addSession = () => {
-    const lastSession = sessions[sessions.length - 1];
-    const newDate = lastSession ? new Date(lastSession.date) : new Date();
-    newDate.setDate(newDate.getDate() + 7);
-    
-    setSessions([...sessions, {
-      id: `draft-${Date.now()}`,
-      date: newDate.toISOString().split('T')[0],
-      time: appointment.time
-    }]);
-  };
-
-  const removeSession = (id: string) => {
-    setSessions(sessions.filter(s => s.id !== id));
   };
 
   const updateSession = (id: string, field: keyof SessionDraft, value: string) => {
@@ -146,204 +154,252 @@ const ClinicalRecordForm: React.FC<ClinicalRecordFormProps> = ({
   };
 
   return (
-    <div className="space-y-10 animate-fade-in max-w-6xl mx-auto pb-32">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-6">
-          <button onClick={onClose} className="w-12 h-12 flex items-center justify-center bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-brand-navy hover:shadow-lg transition-all">
-            <ArrowLeft size={24} />
-          </button>
-          <div>
-            <h2 className="text-4xl font-ubuntu font-bold text-brand-navy tracking-tight">Registro Clínico</h2>
-            <div className="flex items-center gap-3 mt-1.5">
-               <span className="bg-brand-secondary/10 text-brand-secondary text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-brand-secondary/20">Sesión en Curso</span>
-               <p className="text-slate-400 text-xs font-medium">Paciente: <span className="text-brand-navy font-bold">{appointment.patientName}</span></p>
+    <div className="fixed inset-0 z-[60] bg-slate-100 flex items-center justify-center p-0 md:p-8 animate-fade-in">
+      <div className="bg-white w-full max-w-6xl h-full md:h-[90vh] rounded-none md:rounded-[3.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row border border-white/20">
+        
+        {/* SIDEBAR DE CONTROL CLÍNICO */}
+        <div className="w-full md:w-80 bg-slate-50 border-r border-slate-100 p-10 flex flex-col shrink-0">
+          <div className="mb-12">
+            <div className="w-16 h-16 bg-brand-navy rounded-[1.75rem] flex items-center justify-center shadow-xl shadow-brand-navy/10 mb-6">
+              <Stethoscope size={32} className="text-brand-primary" />
             </div>
+            <h3 className="text-3xl font-ubuntu font-bold text-brand-navy leading-none">Evolución</h3>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-3">Registro de Atención</p>
           </div>
-        </div>
-        <div className="flex gap-4">
-          <button 
-            disabled={isAiLoading}
-            onClick={handleAiAssistant}
-            className="flex items-center gap-3 bg-white border-2 border-slate-100 text-brand-navy px-8 py-4 rounded-2xl font-bold text-sm hover:border-brand-primary hover:text-brand-primary transition-all disabled:opacity-50 group"
-          >
-            {isAiLoading ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} className="text-brand-primary group-hover:scale-125 transition-transform" />}
-            Asistente Copilot IA
-          </button>
-          <button 
-            onClick={handleSave}
-            className="flex items-center gap-3 bg-brand-navy text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-2xl shadow-brand-navy/30 hover:bg-brand-navy/90 active:scale-95 transition-all"
-          >
-            <Save size={20} /> Finalizar Atención
-          </button>
-        </div>
-      </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-        {/* Lado Izquierdo: Formulario Clínico */}
-        <div className="xl:col-span-7 space-y-8">
-          <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm space-y-10">
-            <div className="space-y-4">
-              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                <div className="w-6 h-6 rounded-lg bg-brand-secondary/10 flex items-center justify-center text-brand-secondary"><FileText size={14} /></div>
-                Evolución y Hallazgos
-              </label>
-              <textarea 
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Escribe aquí los detalles clínicos encontrados hoy..."
-                className="w-full p-8 bg-slate-50 border-none rounded-[2rem] focus:ring-2 focus:ring-brand-secondary min-h-[300px] text-brand-navy font-medium leading-relaxed placeholder:text-slate-300 shadow-inner resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-brand-primary/10 flex items-center justify-center text-brand-primary"><Stethoscope size={14} /></div>
-                  Diagnóstico
-                </label>
-                <textarea 
-                  value={diagnosis}
-                  onChange={(e) => setDiagnosis(e.target.value)}
-                  placeholder="Diagnóstico técnico..."
-                  className="w-full p-6 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary min-h-[140px] text-sm font-bold text-brand-navy shadow-inner resize-none"
-                />
-              </div>
-
-              <div className="space-y-4">
-                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-brand-accent/10 flex items-center justify-center text-brand-accent"><AlertCircle size={14} /></div>
-                  Recomendaciones
-                </label>
-                <textarea 
-                  value={recommendations}
-                  onChange={(e) => setRecommendations(e.target.value)}
-                  placeholder="Instrucciones post-atención..."
-                  className="w-full p-6 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-accent min-h-[140px] text-sm font-medium text-slate-600 shadow-inner resize-none"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Lado Derecho: Plan de Tratamiento Avanzado */}
-        <div className="xl:col-span-5 space-y-8">
-          <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm flex flex-col min-h-[500px]">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-brand-navy/5 text-brand-navy rounded-2xl flex items-center justify-center">
-                  <Activity size={24} />
+          <nav className="space-y-10 flex-1">
+            {steps.map((s) => {
+              const isDone = currentStep > s.number;
+              const isCurrent = currentStep === s.number;
+              const Icon = s.icon;
+              return (
+                <div key={s.number} className={`flex items-center gap-5 transition-all duration-500 ${isCurrent || isDone ? 'opacity-100 translate-x-0' : 'opacity-30 -translate-x-2'}`}>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-ubuntu font-bold transition-all duration-500 ${
+                    isDone ? 'bg-brand-primary text-white shadow-lg' : isCurrent ? 'bg-brand-navy text-white shadow-xl' : 'bg-white text-slate-300 border border-slate-100'
+                  }`}>
+                    {isDone ? <CheckCircle2 size={24} /> : s.number}
+                  </div>
+                  <div>
+                    <h4 className={`text-sm font-bold tracking-wide ${isCurrent ? 'text-brand-navy' : 'text-slate-400'}`}>{s.title}</h4>
+                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-1">{s.desc}</p>
+                  </div>
                 </div>
+              );
+            })}
+          </nav>
+
+          <div className="mt-auto space-y-6">
+            <div className="p-6 bg-white rounded-[2rem] border border-slate-100 shadow-sm relative group overflow-hidden">
+               <div className="absolute top-0 right-0 w-16 h-16 bg-brand-lightPrimary rounded-full -mr-8 -mt-8 opacity-40 group-hover:scale-150 transition-transform"></div>
+               <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-3 relative z-10">Paciente Actual</p>
+               <div className="flex items-center gap-4 relative z-10">
+                  <div className="w-12 h-12 bg-brand-lightPrimary text-brand-primary rounded-xl flex items-center justify-center font-bold text-lg">
+                    {appointment.patientName.charAt(0)}
+                  </div>
+                  <div className="truncate">
+                    <p className="font-bold text-brand-navy text-sm truncate">{appointment.patientName}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-0.5">{appointment.bookingCode}</p>
+                  </div>
+               </div>
+            </div>
+            
+            <button 
+              onClick={onClose} 
+              className="w-full flex items-center justify-center gap-3 text-slate-400 hover:text-red-500 font-bold text-[10px] uppercase tracking-[0.2em] transition-all p-3"
+            >
+              <ArrowLeft size={16} /> Cancelar Atención
+            </button>
+          </div>
+        </div>
+
+        {/* ÁREA DE TRABAJO MÉDICO */}
+        <div className="flex-1 flex flex-col bg-white overflow-hidden relative">
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-8 md:p-16">
+            
+            {currentStep === 1 && (
+              <div className="max-w-3xl mx-auto space-y-12 animate-fade-in">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                  <div>
+                    <h2 className="text-4xl font-ubuntu font-bold text-brand-navy tracking-tight">Registro de Hallazgos</h2>
+                    <p className="text-slate-500 font-medium text-lg mt-2">Detalla los hallazgos clínicos de la sesión de hoy.</p>
+                  </div>
+                  <button 
+                    onClick={handleAiAssistant}
+                    disabled={isAiLoading || !notes}
+                    className="flex items-center gap-3 bg-brand-lightPrimary text-brand-primary px-8 py-4 rounded-2xl font-bold text-xs hover:bg-brand-primary hover:text-white transition-all shadow-sm group disabled:opacity-50"
+                  >
+                    {isAiLoading ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} className="group-hover:rotate-12 transition-transform" />}
+                    Analítica IA
+                  </button>
+                </div>
+                
+                <div className="space-y-10">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-2 flex items-center gap-2">
+                      <IdCard size={14} className="text-brand-primary" /> Diagnóstico Preliminar
+                    </label>
+                    <input 
+                      required 
+                      placeholder="Ej: Onicocriptosis bilateral leve" 
+                      className="w-full px-8 py-6 bg-slate-50 border-none rounded-[2rem] focus:ring-2 focus:ring-brand-primary font-bold text-xl text-brand-navy shadow-inner outline-none transition-all placeholder:text-slate-200"
+                      value={diagnosis}
+                      onChange={e => setDiagnosis(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-2 flex items-center gap-2">
+                      <FileText size={14} className="text-brand-secondary" /> Notas Médicas de Evolución
+                    </label>
+                    <textarea 
+                      required 
+                      placeholder="Ingresa los hallazgos, síntomas y observaciones relevantes observadas en el paciente..." 
+                      className="w-full px-10 py-10 bg-slate-50 border-none rounded-[3rem] focus:ring-2 focus:ring-brand-secondary text-base font-medium text-slate-700 min-h-[350px] shadow-inner resize-none outline-none transition-all leading-relaxed placeholder:text-slate-200"
+                      value={notes}
+                      onChange={e => setNotes(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 2 && (
+              <div className="max-w-3xl mx-auto space-y-12 animate-fade-in">
                 <div>
-                  <h3 className="font-ubuntu font-bold text-xl text-brand-navy">Plan Evolutivo</h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Gestión de Continuidad</p>
-                </div>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" checked={isTreatmentPlan} onChange={() => setIsTreatmentPlan(!isTreatmentPlan)} className="sr-only peer" />
-                <div className="w-14 h-7 bg-slate-100 rounded-full peer peer-checked:bg-brand-secondary transition-all after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-7 shadow-inner border border-slate-200"></div>
-              </label>
-            </div>
-
-            {!isTreatmentPlan ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-10 opacity-40">
-                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                  <Calendar size={32} className="text-slate-200" />
-                </div>
-                <p className="text-slate-400 text-sm font-medium">Activa el interruptor para proyectar sesiones futuras en la agenda automáticamente.</p>
-              </div>
-            ) : (
-              <div className="space-y-8 animate-fade-in flex-1 flex flex-col">
-                <div className="bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Número de Sesiones</label>
-                    <span className="text-brand-navy font-ubuntu font-bold text-xl">{sessions.length}</span>
-                  </div>
-                  <input 
-                    type="range" 
-                    min="1" 
-                    max="12" 
-                    value={sessions.length}
-                    onChange={(e) => {
-                      const newCount = parseInt(e.target.value);
-                      if (newCount > sessions.length) {
-                         const toAdd = newCount - sessions.length;
-                         const drafts = [...sessions];
-                         for(let i=0; i<toAdd; i++) {
-                            const last = drafts[drafts.length-1];
-                            const nextDate = new Date(last ? last.date : new Date());
-                            nextDate.setDate(nextDate.getDate() + 7);
-                            drafts.push({ id: `draft-${Date.now()}-${i}`, date: nextDate.toISOString().split('T')[0], time: appointment.time });
-                         }
-                         setSessions(drafts);
-                      } else {
-                         setSessions(sessions.slice(0, newCount));
-                      }
-                    }}
-                    className="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-brand-secondary"
-                  />
-                  <div className="flex justify-between mt-3 px-1">
-                     {[1, 3, 6, 9, 12].map(n => <span key={n} className="text-[8px] font-bold text-slate-300">{n}</span>)}
-                  </div>
+                  <h2 className="text-4xl font-ubuntu font-bold text-brand-navy tracking-tight">Operación Médica</h2>
+                  <p className="text-slate-500 font-medium text-lg mt-2">Recomendaciones y plan terapéutico inmediato.</p>
                 </div>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4 max-h-[400px]">
-                  {sessions.map((session, index) => (
-                    <div key={session.id} className="group relative bg-white p-5 rounded-2xl border border-slate-100 hover:border-brand-secondary transition-all flex items-center gap-6 shadow-sm">
-                      <div className="w-10 h-10 rounded-xl bg-brand-navy text-white text-[10px] flex items-center justify-center font-bold flex-shrink-0 shadow-lg">
-                        {index + 1}
+                <div className="space-y-10">
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-2 flex items-center gap-2">
+                      <AlertCircle size={14} className="text-brand-accent" /> Indicaciones y Cuidados
+                    </label>
+                    <textarea 
+                      placeholder="Ingresa las indicaciones para el paciente, medicamentos o ejercicios de recuperación..." 
+                      className="w-full px-10 py-8 bg-slate-50 border-none rounded-[2.5rem] focus:ring-2 focus:ring-brand-accent text-base font-medium text-slate-600 min-h-[200px] shadow-inner resize-none outline-none transition-all leading-relaxed"
+                      value={recommendations}
+                      onChange={e => setRecommendations(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="p-10 bg-brand-lightPrimary/50 rounded-[3.5rem] border border-brand-primary/10 flex flex-col md:flex-row items-center justify-between gap-8 group">
+                    <div className="flex items-center gap-6">
+                      <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center shadow-xl transition-all duration-500 ${isTreatmentPlan ? 'bg-brand-primary text-white scale-110' : 'bg-white text-slate-300'}`}>
+                        <Zap size={36} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4 flex-1">
-                        <div className="space-y-1.5">
-                           <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Fecha</span>
-                           <input 
-                             type="date" 
-                             value={session.date}
-                             onChange={(e) => updateSession(session.id, 'date', e.target.value)}
-                             className="w-full bg-slate-50 border-none rounded-xl py-2 px-3 text-[11px] font-bold text-brand-navy focus:ring-1 focus:ring-brand-secondary"
-                           />
+                      <div className="text-center md:text-left">
+                        <h4 className="text-2xl font-ubuntu font-bold text-brand-navy">Plan de Continuidad</h4>
+                        <p className="text-sm font-medium text-slate-500 mt-1">Habilita esta opción para programar sesiones de seguimiento futuras.</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer scale-150">
+                      <input type="checkbox" checked={isTreatmentPlan} onChange={() => setIsTreatmentPlan(!isTreatmentPlan)} className="sr-only peer" />
+                      <div className="w-12 h-6 bg-slate-200 rounded-full peer peer-checked:bg-brand-primary transition-all after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 3 && (
+              <div className="max-w-3xl mx-auto space-y-12 animate-fade-in">
+                <div>
+                  <h2 className="text-4xl font-ubuntu font-bold text-brand-navy tracking-tight">Proyección de Sesiones</h2>
+                  <p className="text-slate-500 font-medium text-lg mt-2">Configuración masiva de visitas de seguimiento.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50 p-10 rounded-[3rem] shadow-inner border border-slate-100/50">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Frecuencia de Atención</label>
+                    <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-slate-100">
+                      <input 
+                        type="number" 
+                        min="1" 
+                        className="flex-1 p-3 bg-transparent border-none text-brand-navy font-bold focus:ring-0 text-center" 
+                        value={frequency} 
+                        onChange={e => setFrequency(parseInt(e.target.value) || 1)} 
+                      />
+                      <span className="text-[10px] font-bold text-slate-300 uppercase pr-4">Días</span>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Cantidad de Visitas</label>
+                    <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-slate-100">
+                      <input 
+                        type="number" 
+                        min="1" 
+                        max="20" 
+                        className="flex-1 p-3 bg-transparent border-none text-brand-navy font-bold focus:ring-0 text-center" 
+                        value={numSessions} 
+                        onChange={e => setNumSessions(parseInt(e.target.value) || 1)} 
+                      />
+                      <span className="text-[10px] font-bold text-slate-300 uppercase pr-4">Sesiones</span>
+                    </div>
+                  </div>
+                  <button onClick={generateDefaultSessions} className="md:col-span-2 py-3 text-brand-primary font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-lightPrimary rounded-xl transition-all">
+                    <Plus size={14} /> Regenerar Proyección Automática
+                  </button>
+                </div>
+
+                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-4 custom-scrollbar p-1">
+                  {sessions.map((s, idx) => (
+                    <div key={s.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center gap-6 group hover:shadow-xl hover:border-brand-primary transition-all translate-y-0 hover:-translate-y-1">
+                      <div className="w-12 h-12 bg-brand-navy text-white text-[12px] flex items-center justify-center font-bold rounded-2xl shrink-0 shadow-lg">
+                        {idx + 1}
+                      </div>
+                      <div className="grid grid-cols-2 gap-6 flex-1">
+                        <div className="relative">
+                           <input type="date" value={s.date} onChange={e => updateSession(s.id, 'date', e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-5 text-xs font-bold text-brand-navy outline-none" />
                         </div>
-                        <div className="space-y-1.5">
-                           <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Hora</span>
-                           <input 
-                             type="time" 
-                             value={session.time}
-                             onChange={(e) => updateSession(session.id, 'time', e.target.value)}
-                             className="w-full bg-slate-50 border-none rounded-xl py-2 px-3 text-[11px] font-bold text-brand-navy focus:ring-1 focus:ring-brand-secondary"
-                           />
+                        <div className="relative">
+                           <input type="time" value={s.time} onChange={e => updateSession(s.id, 'time', e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-5 text-xs font-bold text-brand-navy outline-none" />
                         </div>
                       </div>
-                      <button 
-                        onClick={() => removeSession(session.id)}
-                        className="text-slate-200 hover:text-red-500 transition-colors p-2"
-                      >
-                        <Trash2 size={16} />
+                      <button onClick={() => setSessions(prev => prev.filter(it => it.id !== s.id))} className="text-slate-200 hover:text-red-500 p-3 transition-colors">
+                        <Trash2 size={20} />
                       </button>
                     </div>
                   ))}
                 </div>
-
-                <button 
-                  onClick={addSession}
-                  className="w-full py-4 bg-slate-50 border-2 border-dashed border-slate-200 text-slate-400 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:border-brand-secondary hover:text-brand-secondary transition-all flex items-center justify-center gap-3"
-                >
-                  <Plus size={16} /> Añadir Sesión Manual
-                </button>
               </div>
             )}
           </div>
 
-          <div className="bg-gradient-to-br from-brand-navy to-brand-primary p-10 rounded-[3rem] text-white space-y-6 relative overflow-hidden shadow-2xl">
-             <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
-             <div className="flex items-center gap-4 relative z-10">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                  <Activity size={20} className="text-brand-accent" />
-                </div>
-                <h4 className="font-ubuntu font-bold text-sm uppercase tracking-[0.2em]">Asistencia Técnica</h4>
-             </div>
-             <p className="text-white/60 text-xs leading-relaxed font-medium relative z-10">
-                Al finalizar, las sesiones proyectadas se bloquearán automáticamente en la **Agenda Maestra** de la sede seleccionada, notificando al paciente por su canal de contacto.
-             </p>
+          {/* BARRA DE CONTROL INFERIOR */}
+          <div className="p-10 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
+            {currentStep > 1 ? (
+              <button 
+                onClick={() => setCurrentStep(prev => prev - 1)} 
+                className="flex items-center gap-3 px-10 py-5 text-slate-400 font-bold text-xs hover:text-brand-navy transition-all uppercase tracking-[0.3em]"
+              >
+                <ChevronLeft size={20} /> Retroceder
+              </button>
+            ) : <div />}
+
+            <div className="flex gap-6">
+              {currentStep < (isTreatmentPlan ? 3 : 2) ? (
+                <button 
+                  onClick={() => {
+                    if (currentStep === 1 && (!diagnosis || !notes)) return alert("Completa el diagnóstico y las notas antes de seguir.");
+                    setCurrentStep(prev => prev + 1);
+                  }}
+                  className="bg-brand-navy text-white px-12 py-5 rounded-[2rem] font-bold text-sm flex items-center gap-5 shadow-2xl hover:bg-brand-navy/90 transition-all active:scale-[0.98] border border-white/5"
+                >
+                  Continuar <ArrowRight size={20} className="text-brand-primary" />
+                </button>
+              ) : (
+                <button 
+                  onClick={handleSave}
+                  className="bg-brand-primary text-white px-14 py-6 rounded-[2.5rem] font-bold text-base flex items-center gap-5 shadow-[0_20px_50px_rgba(0,191,165,0.3)] hover:scale-[1.03] transition-all active:scale-95 border border-white/10"
+                >
+                  <Save size={24} /> Finalizar Registro Médico
+                </button>
+              )}
+            </div>
           </div>
+          
+          <div className="absolute top-20 right-[-100px] w-64 h-64 bg-brand-lightPrimary rounded-full blur-[100px] opacity-20 -z-10"></div>
         </div>
       </div>
     </div>

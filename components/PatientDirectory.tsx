@@ -25,7 +25,10 @@ import {
   ChevronLeft,
   CheckCircle2,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  FileSearch,
+  // Add missing Activity icon import
+  Activity
 } from 'lucide-react';
 import { Patient, ClinicalHistoryEntry, Appointment, AppointmentStatus, Sede, Professional } from '../types';
 
@@ -211,9 +214,9 @@ const PatientDirectory: React.FC<PatientDirectoryProps> = ({
   };
 
   const steps = [
-    { number: 1, title: 'Hallazgos', desc: 'Diagnóstico clínico' },
-    { number: 2, title: 'Operación', desc: 'Asignación médica' },
-    { number: 3, title: 'Plan (Opc)', desc: 'Agendamiento', optional: true }
+    { number: 1, title: 'Hallazgos', desc: 'Diagnóstico clínico', icon: FileSearch },
+    { number: 2, title: 'Operación', desc: 'Asignación médica', icon: Activity },
+    { number: 3, title: 'Plan (Opc)', desc: 'Agendamiento', optional: true, icon: Calendar }
   ];
 
   return (
@@ -338,35 +341,35 @@ const PatientDirectory: React.FC<PatientDirectoryProps> = ({
         </div>
       </div>
 
-      {/* MODAL EVOLUCIÓN MANUAL - VERSIÓN COMPACTA Y PROFESIONAL */}
+      {/* MODAL EVOLUCIÓN MANUAL - REDISEÑADO PARA SER MÁS ANCHO Y BALANCEDO */}
       {showNewEntryModal && selectedPatient && (
-        <div className="fixed inset-0 z-[100] bg-brand-navy/70 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in overflow-hidden">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-[900px] max-h-[750px] shadow-[0_50px_100px_rgba(0,0,0,0.3)] border border-white/20 flex overflow-hidden relative animate-fade-in">
+        <div className="fixed inset-0 z-[100] bg-brand-navy/80 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in overflow-hidden">
+          <div className="bg-white rounded-[3rem] w-full max-w-5xl max-h-[85vh] shadow-[0_50px_100px_rgba(0,0,0,0.4)] border border-white/20 flex overflow-hidden animate-fade-in relative">
              
-             {/* PANEL IZQUIERDO: MINI NAVEGADOR */}
-             <div className="w-64 bg-slate-50/50 border-r border-slate-100 p-8 flex flex-col shrink-0">
-                <div className="mb-10">
-                   <div className="w-12 h-12 bg-brand-navy text-white rounded-2xl flex items-center justify-center shadow-lg mb-4">
-                      <ClipboardList size={24} className="text-brand-secondary" />
+             {/* PANEL IZQUIERDO: INDICADOR DE PASOS */}
+             <div className="w-72 bg-slate-50/50 border-r border-slate-100 p-10 flex flex-col shrink-0">
+                <div className="mb-12">
+                   <div className="w-16 h-16 bg-brand-navy text-white rounded-3xl flex items-center justify-center shadow-lg mb-6">
+                      <ClipboardList size={32} className="text-brand-secondary" />
                    </div>
-                   <h3 className="text-xl font-ubuntu font-bold text-brand-navy leading-tight">Evolución</h3>
-                   <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1 truncate">{selectedPatient.name}</p>
+                   <h3 className="text-2xl font-ubuntu font-bold text-brand-navy leading-tight">Registro Médico</h3>
+                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2 truncate">{selectedPatient.name}</p>
                 </div>
 
-                <div className="space-y-6 flex-1">
+                <div className="space-y-10 flex-1">
                    {steps.map((s) => {
                      const isDone = currentStep > s.number;
                      const isCurrent = currentStep === s.number;
                      return (
-                       <div key={s.number} className={`flex gap-3 items-center transition-all ${isCurrent || isDone ? 'opacity-100' : 'opacity-30'}`}>
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-ubuntu font-bold text-xs transition-all ${
+                       <div key={s.number} className={`flex gap-4 items-center transition-all ${isCurrent || isDone ? 'opacity-100' : 'opacity-30'}`}>
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-ubuntu font-bold text-xs transition-all ${
                             isDone ? 'bg-brand-secondary text-white shadow-md' : isCurrent ? 'bg-brand-navy text-white shadow-md' : 'bg-white text-slate-300 border border-slate-100'
                           }`}>
-                             {isDone ? <CheckCircle2 size={14} /> : s.number}
+                             {isDone ? <CheckCircle2 size={18} /> : s.number}
                           </div>
                           <div>
-                             <p className={`text-[10px] font-bold tracking-wide transition-all ${isCurrent ? 'text-brand-navy' : 'text-slate-400'}`}>{s.title}</p>
-                             <p className="text-[8px] font-bold text-slate-300 uppercase mt-0.5">{s.desc}</p>
+                             <p className={`text-xs font-bold tracking-wide transition-all ${isCurrent ? 'text-brand-navy' : 'text-slate-400'}`}>{s.title}</p>
+                             <p className="text-[9px] font-bold text-slate-300 uppercase mt-0.5">{s.desc}</p>
                           </div>
                        </div>
                      );
@@ -375,44 +378,44 @@ const PatientDirectory: React.FC<PatientDirectoryProps> = ({
 
                 <button 
                   onClick={() => setShowNewEntryModal(false)}
-                  className="flex items-center gap-2 text-slate-400 hover:text-red-500 font-bold text-[9px] uppercase tracking-widest transition-all mt-auto"
+                  className="flex items-center gap-3 text-slate-400 hover:text-red-500 font-bold text-[10px] uppercase tracking-widest transition-all mt-auto"
                 >
-                  <X size={14} /> Cancelar Registro
+                  <X size={16} /> Cancelar Registro
                 </button>
              </div>
 
-             {/* CONTENIDO PRINCIPAL */}
+             {/* CONTENIDO PRINCIPAL EN COLUMNA CENTRAL */}
              <div className="flex-1 flex flex-col bg-white">
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-10">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-12">
                    {currentStep === 1 && (
-                     <div className="space-y-8 animate-fade-in">
+                     <div className="space-y-10 animate-fade-in">
                         <div>
-                           <h4 className="text-2xl font-ubuntu font-bold text-brand-navy">Hallazgos Médicos</h4>
-                           <p className="text-slate-400 text-xs font-medium mt-1">Ingresa el diagnóstico y notas de la sesión.</p>
+                           <h4 className="text-3xl font-ubuntu font-bold text-brand-navy">Hallazgos Médicos</h4>
+                           <p className="text-slate-400 text-sm font-medium mt-1">Ingresa el diagnóstico y las notas detalladas de la sesión.</p>
                         </div>
                         
-                        <div className="space-y-6">
-                           <div className="space-y-2">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                 <IdCard size={12} className="text-brand-secondary" /> Diagnóstico Corto
+                        <div className="space-y-8">
+                           <div className="space-y-3">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                 <IdCard size={14} className="text-brand-secondary" /> Título / Diagnóstico Corto
                               </label>
                               <input 
                                  required 
-                                 placeholder="Ej: Seguimiento de ortodoncia..." 
-                                 className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-secondary font-bold text-sm text-brand-navy shadow-inner outline-none transition-all placeholder:text-slate-200"
+                                 placeholder="Ej: Evaluación de rutina / Tratamiento correctivo..." 
+                                 className="w-full px-7 py-5 bg-slate-50 border-none rounded-3xl focus:ring-2 focus:ring-brand-secondary font-bold text-base text-brand-navy shadow-inner outline-none transition-all placeholder:text-slate-300"
                                  value={newEntryForm.diagnosis}
                                  onChange={e => setNewEntryForm({...newEntryForm, diagnosis: e.target.value})}
                               />
                            </div>
                            
-                           <div className="space-y-2">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                 <FileText size={12} className="text-brand-primary" /> Notas Detalladas
+                           <div className="space-y-3">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                 <FileText size={14} className="text-brand-primary" /> Notas Detalladas de Evolución
                               </label>
                               <textarea 
                                  required 
-                                 placeholder="Notas de evolución..." 
-                                 className="w-full px-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary text-sm font-medium text-slate-700 min-h-[180px] shadow-inner resize-none outline-none transition-all placeholder:text-slate-200 leading-relaxed"
+                                 placeholder="Ingresa los detalles clínicos observados..." 
+                                 className="w-full px-8 py-7 bg-slate-50 border-none rounded-[2rem] focus:ring-2 focus:ring-brand-primary text-sm font-medium text-slate-700 min-h-[280px] shadow-inner resize-none outline-none transition-all placeholder:text-slate-300 leading-relaxed"
                                  value={newEntryForm.notes}
                                  onChange={e => setNewEntryForm({...newEntryForm, notes: e.target.value})}
                               />
@@ -422,89 +425,93 @@ const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                    )}
 
                    {currentStep === 2 && (
-                     <div className="space-y-8 animate-fade-in">
+                     <div className="space-y-10 animate-fade-in">
                         <div>
-                           <h4 className="text-2xl font-ubuntu font-bold text-brand-navy">Contexto</h4>
-                           <p className="text-slate-400 text-xs font-medium mt-1">Define el responsable y lugar de atención.</p>
+                           <h4 className="text-3xl font-ubuntu font-bold text-brand-navy">Configuración de Operación</h4>
+                           <p className="text-slate-400 text-sm font-medium mt-1">Define el especialista y centro de atención.</p>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-6">
-                           <div className="space-y-2">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                 <MapPin size={12} className="text-brand-accent" /> Sede
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                           <div className="space-y-3">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                 <MapPin size={14} className="text-brand-accent" /> Centro de Atención (Sede)
                               </label>
                               <div className="relative">
                                  <select 
-                                    className="w-full pl-10 pr-10 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-accent outline-none font-bold text-xs appearance-none text-brand-navy cursor-pointer"
+                                    className="w-full pl-12 pr-10 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-accent outline-none font-bold text-sm appearance-none text-brand-navy cursor-pointer shadow-inner"
                                     value={newEntryForm.sedeId}
                                     onChange={e => setNewEntryForm({...newEntryForm, sedeId: e.target.value})}
                                  >
                                     {sedes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                  </select>
-                                 <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                 <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+                                 <MapPin size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                 <ChevronDown size={20} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                               </div>
                            </div>
 
-                           <div className="space-y-2">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                 <UserIcon size={12} className="text-brand-secondary" /> Especialista
+                           <div className="space-y-3">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                 <UserIcon size={14} className="text-brand-secondary" /> Profesional a Cargo
                               </label>
                               <div className="relative">
                                  <select 
-                                    className="w-full pl-10 pr-10 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-secondary outline-none font-bold text-xs appearance-none text-brand-navy cursor-pointer"
+                                    className="w-full pl-12 pr-10 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-secondary outline-none font-bold text-sm appearance-none text-brand-navy cursor-pointer shadow-inner"
                                     value={newEntryForm.professionalId}
                                     onChange={e => setNewEntryForm({...newEntryForm, professionalId: e.target.value})}
                                  >
                                     {professionals.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                  </select>
-                                 <Stethoscope size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                 <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+                                 <Stethoscope size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                 <ChevronDown size={20} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                               </div>
                            </div>
+                        </div>
 
-                           <div className="p-6 bg-brand-lightSecondary/30 rounded-3xl border border-brand-secondary/10 flex items-center justify-between">
-                              <div className="flex items-center gap-4">
-                                 <Zap size={20} className={newEntryForm.isTreatmentPlan ? 'text-brand-secondary' : 'text-slate-300'} />
-                                 <div>
-                                    <span className="text-xs font-ubuntu font-bold text-brand-navy block">¿Plan de Tratamiento?</span>
-                                    <span className="text-[9px] text-slate-400 font-bold uppercase">Sesiones automáticas</span>
-                                 </div>
+                        <div className="p-10 bg-brand-lightSecondary/40 rounded-[3rem] border border-brand-secondary/10 flex items-center justify-between">
+                           <div className="flex items-center gap-6">
+                              <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-lg ${newEntryForm.isTreatmentPlan ? 'bg-brand-secondary text-white' : 'bg-white text-slate-300'}`}>
+                                 <Zap size={32} />
                               </div>
-                              <label className="relative inline-flex items-center cursor-pointer scale-110">
-                                 <input type="checkbox" checked={newEntryForm.isTreatmentPlan} onChange={() => setNewEntryForm(p => ({...p, isTreatmentPlan: !p.isTreatmentPlan}))} className="sr-only peer" />
-                                 <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-brand-secondary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5"></div>
-                              </label>
+                              <div>
+                                 <span className="text-lg font-ubuntu font-bold text-brand-navy block">¿Activar Plan de Tratamiento?</span>
+                                 <span className="text-xs font-medium text-slate-500">Programa automáticamente sesiones de seguimiento futuro.</span>
+                              </div>
                            </div>
+                           <label className="relative inline-flex items-center cursor-pointer scale-125">
+                              <input type="checkbox" checked={newEntryForm.isTreatmentPlan} onChange={() => setNewEntryForm(p => ({...p, isTreatmentPlan: !p.isTreatmentPlan}))} className="sr-only peer" />
+                              <div className="w-12 h-6 bg-slate-200 rounded-full peer peer-checked:bg-brand-secondary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
+                           </label>
                         </div>
                      </div>
                    )}
 
                    {currentStep === 3 && (
-                     <div className="space-y-8 animate-fade-in">
+                     <div className="space-y-10 animate-fade-in">
                         <div>
-                           <h4 className="text-2xl font-ubuntu font-bold text-brand-navy">Sesiones Proyectadas</h4>
-                           <p className="text-slate-400 text-xs font-medium mt-1">Configura la frecuencia del plan.</p>
+                           <h4 className="text-3xl font-ubuntu font-bold text-brand-navy">Proyección de Sesiones</h4>
+                           <p className="text-slate-400 text-sm font-medium mt-1">Configura la frecuencia y el total de visitas proyectadas.</p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 bg-slate-50 p-6 rounded-3xl">
-                           <div className="space-y-2">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Cant. Sesiones</label>
-                              <input type="number" min="1" max="15" className="w-full p-3 bg-white rounded-xl text-sm font-bold border-none focus:ring-1 focus:ring-brand-secondary shadow-sm" value={newEntryForm.numSessions} onChange={e => setNewEntryForm(p => ({...p, numSessions: parseInt(e.target.value) || 1}))} />
+                        <div className="grid grid-cols-2 gap-8 bg-slate-50 p-10 rounded-[2.5rem] shadow-inner">
+                           <div className="space-y-3">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Total de Sesiones</label>
+                              <input type="number" min="1" max="15" className="w-full px-6 py-4 bg-white rounded-2xl text-base font-bold border-none focus:ring-2 focus:ring-brand-secondary shadow-sm" value={newEntryForm.numSessions} onChange={e => setNewEntryForm(p => ({...p, numSessions: parseInt(e.target.value) || 1}))} />
                            </div>
-                           <div className="space-y-2">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Cada (Días)</label>
-                              <input type="number" min="1" max="30" className="w-full p-3 bg-white rounded-xl text-sm font-bold border-none focus:ring-1 focus:ring-brand-secondary shadow-sm" value={newEntryForm.frequency} onChange={e => setNewEntryForm(p => ({...p, frequency: parseInt(e.target.value) || 1}))} />
+                           <div className="space-y-3">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Frecuencia cada (Días)</label>
+                              <input type="number" min="1" max="30" className="w-full px-6 py-4 bg-white rounded-2xl text-base font-bold border-none focus:ring-2 focus:ring-brand-secondary shadow-sm" value={newEntryForm.frequency} onChange={e => setNewEntryForm(p => ({...p, frequency: parseInt(e.target.value) || 1}))} />
                            </div>
                         </div>
 
-                        <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="space-y-4 max-h-[300px] overflow-y-auto pr-4 custom-scrollbar">
                            {newEntryForm.sessions.map((s, idx) => (
-                              <div key={s.id} className="bg-white p-4 rounded-2xl border border-slate-50 flex items-center gap-4 hover:shadow-md transition-shadow">
-                                 <span className="w-7 h-7 bg-brand-navy text-white text-[9px] flex items-center justify-center font-bold rounded-lg shrink-0">{idx + 1}</span>
-                                 <input type="date" value={s.date} onChange={e => updateSession(s.id, 'date', e.target.value)} className="bg-slate-50 border-none rounded-lg py-1 px-3 text-[10px] font-bold text-brand-navy outline-none w-full" />
-                                 <input type="time" value={s.time} onChange={e => updateSession(s.id, 'time', e.target.value)} className="bg-slate-50 border-none rounded-lg py-1 px-3 text-[10px] font-bold text-brand-navy outline-none w-24" />
-                                 <button onClick={() => setNewEntryForm(prev => ({...prev, sessions: prev.sessions.filter(it => it.id !== s.id)}))} className="text-slate-200 hover:text-red-500 p-1"><Trash2 size={14} /></button>
+                              <div key={s.id} className="bg-white p-5 rounded-3xl border border-slate-100 flex items-center gap-6 group hover:shadow-md transition-all">
+                                 <span className="w-10 h-10 bg-brand-navy text-white text-[11px] flex items-center justify-center font-bold rounded-xl shrink-0 shadow-lg">{idx + 1}</span>
+                                 <div className="grid grid-cols-2 gap-4 flex-1">
+                                    <input type="date" value={s.date} onChange={e => updateSession(s.id, 'date', e.target.value)} className="bg-slate-50 border-none rounded-xl py-2 px-4 text-xs font-bold text-brand-navy outline-none" />
+                                    <input type="time" value={s.time} onChange={e => updateSession(s.id, 'time', e.target.value)} className="bg-slate-50 border-none rounded-xl py-2 px-4 text-xs font-bold text-brand-navy outline-none" />
+                                 </div>
+                                 <button onClick={() => setNewEntryForm(prev => ({...prev, sessions: prev.sessions.filter(it => it.id !== s.id)}))} className="text-slate-200 hover:text-red-500 p-2 transition-colors"><Trash2 size={18} /></button>
                               </div>
                            ))}
                         </div>
@@ -512,11 +519,14 @@ const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                    )}
                 </div>
 
-                {/* FOOTER ACCIONES */}
-                <div className="px-10 py-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between shrink-0">
+                {/* PIE DE PÁGINA: ACCIONES */}
+                <div className="px-12 py-10 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between shrink-0">
                    {currentStep > 1 ? (
-                     <button onClick={() => setCurrentStep(prev => prev - 1)} className="flex items-center gap-2 px-6 py-3 text-slate-500 font-bold text-[10px] hover:text-brand-navy transition-all uppercase tracking-widest">
-                        <ChevronLeft size={16} /> Atrás
+                     <button 
+                        onClick={() => setCurrentStep(prev => prev - 1)} 
+                        className="flex items-center gap-3 px-8 py-4 text-slate-500 font-bold text-xs hover:text-brand-navy transition-all uppercase tracking-[0.2em]"
+                     >
+                        <ChevronLeft size={20} /> Atrás
                      </button>
                    ) : <div />}
 
@@ -524,19 +534,19 @@ const PatientDirectory: React.FC<PatientDirectoryProps> = ({
                      {currentStep < (newEntryForm.isTreatmentPlan ? 3 : 2) ? (
                         <button 
                            onClick={() => {
-                              if (currentStep === 1 && (!newEntryForm.diagnosis || !newEntryForm.notes)) return alert("Completa los hallazgos.");
+                              if (currentStep === 1 && (!newEntryForm.diagnosis || !newEntryForm.notes)) return alert("Por favor ingresa diagnóstico y notas.");
                               setCurrentStep(prev => prev + 1);
                            }}
-                           className="bg-brand-navy text-white px-8 py-3.5 rounded-2xl font-bold text-xs flex items-center gap-3 hover:shadow-xl transition-all"
+                           className="bg-brand-navy text-white px-12 py-5 rounded-[2rem] font-bold text-sm flex items-center gap-4 hover:shadow-2xl transition-all shadow-xl active:scale-95"
                         >
-                           Continuar <ArrowRight size={16} className="text-brand-secondary" />
+                           Continuar <ArrowRight size={20} className="text-brand-secondary" />
                         </button>
                      ) : (
                         <button 
                            onClick={handleCreateEntry}
-                           className="bg-brand-secondary text-white px-10 py-4 rounded-2xl font-bold text-xs flex items-center gap-3 shadow-xl shadow-brand-secondary/20 hover:scale-[1.02] transition-all"
+                           className="bg-brand-secondary text-white px-14 py-5 rounded-[2rem] font-bold text-sm flex items-center gap-4 shadow-2xl shadow-brand-secondary/30 hover:scale-[1.02] transition-all active:scale-95"
                         >
-                           <Save size={18} /> Guardar Atención
+                           <Save size={20} /> Registrar Atención Clínica
                         </button>
                      )}
                    </div>
