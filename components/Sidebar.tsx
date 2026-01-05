@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
   CalendarDays, 
@@ -10,7 +10,8 @@ import {
   Activity,
   UserCog,
   Settings,
-  ChevronRight
+  ChevronRight,
+  Check
 } from 'lucide-react';
 import { ViewState, UserRole } from '../types';
 
@@ -23,6 +24,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, userRole = UserRole.RECEPCIONIST, onLogout }) => {
   const isAdmin = userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
+  const [copied, setCopied] = useState(false);
   
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -31,6 +33,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, userRole =
     { id: 'staff-management', icon: UserCog, label: isAdmin ? 'Especialistas' : 'Ver Equipo' },
     { id: 'schedules', icon: Clock, label: isAdmin ? 'Configurar Horarios' : 'Mis Horarios' },
   ];
+
+  const handleCopyLink = () => {
+    const portalUrl = `${window.location.origin}/portal`;
+    navigator.clipboard.writeText(portalUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="w-64 fixed h-full bg-[#0D0D33] p-6 flex flex-col border-r border-white/5 z-50">
@@ -81,11 +90,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, userRole =
 
       <div className="pt-6 border-t border-white/5 space-y-4">
         <button 
-          onClick={() => onViewChange('portal')}
+          onClick={handleCopyLink}
           className="w-full flex items-center justify-between gap-4 px-4 py-3 bg-white/5 rounded-xl text-slate-300 font-bold text-[10px] hover:bg-white/10 transition-all border border-white/5 group"
         >
           <span className="flex items-center gap-3">
-             <ExternalLink size={14} className="text-brand-primary" /> Ver Portal Web
+             {copied ? <Check size={14} className="text-green-400" /> : <ExternalLink size={14} className="text-brand-primary" />} 
+             {copied ? '¡URL Copiada!' : 'Copiar Link Portal'}
           </span>
           <ChevronRight size={12} className="opacity-30 group-hover:translate-x-1 transition-transform" />
         </button>
