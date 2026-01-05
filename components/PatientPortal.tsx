@@ -88,8 +88,8 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-inter overflow-x-hidden text-brand-navy">
-      {/* Header Fijo con Blur - Mobile Ready */}
-      <nav className="bg-white/90 backdrop-blur-md border-b border-slate-100 px-5 md:px-12 py-4 flex items-center justify-between sticky top-0 z-[100] shadow-sm">
+      {/* Header Fijo */}
+      <nav className="bg-white/95 backdrop-blur-md border-b border-slate-100 px-5 md:px-12 py-4 flex items-center justify-between sticky top-0 z-[100] shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center overflow-hidden border border-slate-100 shadow-sm transition-transform active:scale-95">
             <img src={company.logo} alt="Logo" className="w-full h-full object-contain p-1.5" />
@@ -108,115 +108,107 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
       </nav>
 
       <main className="flex-1 flex flex-col items-center">
-        {/* Hero Section - Centrado Total para móvil */}
-        <div className="w-full h-[320px] md:h-[400px] relative overflow-hidden flex items-center justify-center bg-brand-navy">
+        {/* Hero Section Centrado */}
+        <div className="w-full h-[340px] md:h-[450px] relative overflow-hidden flex items-center justify-center bg-brand-navy">
            <img 
             src={company.portalHero} 
-            className="w-full h-full object-cover opacity-40 scale-105" 
+            className="w-full h-full object-cover opacity-30 scale-105" 
             alt="Clinic Hero" 
            />
-           <div className="absolute inset-0 bg-gradient-to-b from-brand-navy/30 via-brand-navy/50 to-[#F8FAFC]"></div>
+           <div className="absolute inset-0 bg-gradient-to-b from-brand-navy/40 via-brand-navy/60 to-[#F8FAFC]"></div>
            <div className="relative z-10 text-center px-6 max-w-2xl animate-fade-in flex flex-col items-center">
-              <h1 className="text-white text-4xl md:text-6xl font-ubuntu font-bold tracking-tight drop-shadow-2xl text-balance leading-[1.1]">
+              <h1 className="text-white text-4xl md:text-7xl font-ubuntu font-bold tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] text-balance leading-[1.15]">
                 Cuidado experto <br/> para tus <span className="text-brand-primary italic">pies</span>
               </h1>
-              <p className="text-white/90 font-medium text-sm md:text-xl mt-6 max-w-md mx-auto leading-relaxed drop-shadow-md">
+              <p className="text-white/90 font-medium text-base md:text-2xl mt-6 max-w-md mx-auto leading-relaxed drop-shadow-md">
                 Agenda tu atención profesional hoy mismo desde tu celular.
               </p>
            </div>
         </div>
 
-        {/* Flujo Principal - Contenedor Centrado */}
-        <div className="max-w-4xl w-full -mt-12 relative z-20 px-4 pb-20">
+        {/* Contenido Principal */}
+        <div className="max-w-4xl w-full -mt-14 relative z-20 px-4 pb-20">
             
-            {/* Indicador de Progreso Odoo Style */}
-            <div className="flex items-center justify-between gap-2 mb-8 overflow-x-auto no-scrollbar py-5 bg-white/95 backdrop-blur-md rounded-[2rem] px-6 shadow-[0_15px_35px_rgba(0,0,0,0.05)] border border-white">
+            {/* Indicador de Progreso */}
+            <div className="flex items-center justify-between gap-2 mb-8 overflow-x-auto no-scrollbar py-5 bg-white/95 backdrop-blur-md rounded-[2.5rem] px-8 shadow-[0_20px_40px_rgba(0,0,0,0.06)] border border-white">
             {steps.map((s, idx) => (
                 <React.Fragment key={s}>
                     <div className="flex flex-col items-center gap-1.5 shrink-0">
                         <div 
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-bold transition-all duration-500 ${
+                            className={`w-10 h-10 rounded-2xl flex items-center justify-center text-[11px] font-bold transition-all duration-500 ${
                             idx < currentIdx ? 'bg-green-100 text-brand-primary' : 
-                            idx === currentIdx ? 'text-white shadow-lg scale-110 ring-4 ring-brand-primary/10' : 
-                            'bg-slate-100 text-slate-300'
+                            idx === currentIdx ? 'text-white shadow-xl scale-110 ring-4 ring-brand-primary/10' : 
+                            'bg-slate-50 text-slate-300'
                             }`} 
                             style={{ backgroundColor: idx === currentIdx ? primaryColor : undefined }}
                         >
-                            {idx < currentIdx ? <CheckCircle2 size={16} /> : idx + 1}
+                            {idx < currentIdx ? <CheckCircle2 size={18} /> : idx + 1}
                         </div>
                     </div>
                     {idx < steps.length - 1 && (
-                        <div className={`flex-1 min-w-[15px] h-[2px] rounded-full transition-all duration-500 ${idx < currentIdx ? 'opacity-100' : 'bg-slate-100'}`} style={{ backgroundColor: idx < currentIdx ? primaryColor : undefined }} />
+                        <div className={`flex-1 min-w-[20px] h-[2px] rounded-full transition-all duration-500 ${idx < currentIdx ? 'opacity-100' : 'bg-slate-100'}`} style={{ backgroundColor: idx < currentIdx ? primaryColor : undefined }} />
                     )}
                 </React.Fragment>
             ))}
             </div>
 
-            {/* Card de Contenido */}
-            <div className="bg-white rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.05)] border border-slate-50 overflow-hidden flex flex-col min-h-[500px]">
+            {/* Tarjeta de Formulario */}
+            <div className="bg-white rounded-[3rem] shadow-[0_40px_80px_rgba(0,0,0,0.07)] border border-slate-50 overflow-hidden flex flex-col min-h-[520px]">
                 
                 {/* Paso 1: Sedes */}
                 {step === 'sede' && (
                   <div className="p-8 md:p-14 space-y-10 animate-fade-in flex-1">
                       <div className="text-center">
                         <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">¿Dónde te atenderás?</h2>
-                        <p className="text-slate-400 text-sm font-medium mt-2">Selecciona la sede más cercana a ti.</p>
+                        <p className="text-slate-400 text-sm font-medium mt-2">Selecciona la sede más conveniente para ti.</p>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {sedes.map(s => (
                             <div key={s.id} className="group relative">
-                              <div className="w-full p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-brand-primary/20 transition-all text-left flex flex-col h-full overflow-hidden">
+                              <div className="w-full p-6 bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:border-brand-primary/20 transition-all text-left flex flex-col h-full">
                                   <div className="flex items-start justify-between mb-6">
-                                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
-                                        <MapPin size={24} />
+                                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
+                                        <MapPin size={28} />
                                     </div>
                                     <a 
                                       href={getMapsUrl(s.address)} 
                                       target="_blank" 
                                       rel="noopener noreferrer"
                                       className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:bg-brand-primary hover:text-white transition-all border border-slate-100"
-                                      title="Google Maps"
                                     >
-                                      <Navigation size={18} />
+                                      <Navigation size={20} />
                                     </a>
                                   </div>
                                   
                                   <div className="flex-1">
                                     <h4 className="font-ubuntu font-bold text-xl group-hover:text-brand-primary transition-colors mb-2">{s.name}</h4>
-                                    <p className="text-xs text-slate-500 font-medium leading-relaxed">{s.address}</p>
-                                    <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                        <Phone size={12} className="text-brand-primary" /> {s.phone || 'Sede Central'}
+                                    <p className="text-[13px] text-slate-500 font-medium leading-relaxed">{s.address}</p>
+                                    <div className="mt-5 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 w-fit px-3 py-1.5 rounded-lg">
+                                        <Phone size={12} className="text-brand-primary" /> {s.phone || 'Disponible'}
                                     </div>
                                   </div>
 
                                   <button 
                                     onClick={() => { setBooking(prev => ({...prev, sede: s})); setStep('info'); }}
-                                    className="mt-8 w-full py-4 rounded-2xl text-white font-bold text-xs uppercase tracking-widest shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+                                    className="mt-8 w-full py-4.5 rounded-2xl text-white font-bold text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
                                     style={{ backgroundColor: primaryColor }}
                                   >
-                                    Elegir Sede <ArrowRight size={14} />
+                                    Seleccionar Sede <ArrowRight size={14} />
                                   </button>
                               </div>
                             </div>
                         ))}
                       </div>
-
-                      {sedes.length === 0 && (
-                        <div className="py-20 text-center flex flex-col items-center">
-                           <Loader2 className="animate-spin text-brand-primary mb-4" size={40} />
-                           <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Cargando centros de atención...</p>
-                        </div>
-                      )}
                   </div>
                 )}
 
-                {/* Paso 2: Datos del Paciente */}
+                {/* Paso 2: Información del Paciente */}
                 {step === 'info' && (
                   <div className="p-8 md:p-14 space-y-10 animate-fade-in max-w-xl mx-auto w-full flex-1 flex flex-col justify-center">
                     <div className="text-center">
                       <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Tus Datos</h2>
-                      <p className="text-slate-400 text-sm font-medium mt-2">Ingresa tu información para tu atención en <b>Podología Integral</b>.</p>
+                      <p className="text-slate-400 text-sm font-medium mt-2">Completa tu información para agendar en <b>Podología Integral</b>.</p>
                     </div>
 
                     <div className="space-y-6">
@@ -228,7 +220,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                               type="text" 
                               value={booking.patientName} 
                               onChange={(e) => setBooking(prev => ({...prev, patientName: e.target.value}))} 
-                              className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
+                              className="w-full px-6 py-4.5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
                               style={{ '--tw-ring-color': primaryColor } as any} 
                               placeholder="Ej: Juan Pérez" 
                             />
@@ -240,7 +232,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                                 <Phone size={12} style={{ color: primaryColor }} /> WhatsApp <span className="text-red-400">*</span>
                               </label>
                               <div className="flex gap-2">
-                                <div className="bg-slate-50 px-4 py-4 rounded-2xl font-bold text-slate-400 shadow-inner flex items-center text-sm">+51</div>
+                                <div className="bg-slate-50 px-4 py-4.5 rounded-2xl font-bold text-slate-400 shadow-inner flex items-center text-sm">+51</div>
                                 <input 
                                   type="tel" 
                                   value={booking.patientPhone} 
@@ -248,7 +240,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                                     const val = e.target.value.replace(/\D/g, '').slice(0, 9);
                                     setBooking(prev => ({...prev, patientPhone: val}));
                                   }} 
-                                  className={`flex-1 px-6 py-4 bg-slate-50 border-2 rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all ${
+                                  className={`flex-1 px-6 py-4.5 bg-slate-50 border-2 rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all ${
                                     booking.patientPhone.length > 0 && !isPhoneValid ? 'border-red-200' : 'border-transparent'
                                   }`} 
                                   style={{ '--tw-ring-color': primaryColor } as any} 
@@ -269,9 +261,9 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                                 type="text" 
                                 value={booking.patientDni} 
                                 onChange={(e) => setBooking(prev => ({...prev, patientDni: e.target.value.replace(/\D/g, '').slice(0, 12)}))} 
-                                className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
+                                className="w-full px-6 py-4.5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
                                 style={{ '--tw-ring-color': primaryColor } as any} 
-                                placeholder="Opcional" 
+                                placeholder="DNI del paciente" 
                               />
                           </div>
                         </div>
@@ -280,10 +272,10 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                           <button 
                             disabled={!isInfoStepComplete} 
                             onClick={() => setStep('schedule')} 
-                            className="w-full py-5 text-white rounded-[1.5rem] font-bold text-base shadow-xl transition-all active:scale-95 disabled:opacity-30 disabled:grayscale flex items-center justify-center gap-3" 
+                            className="w-full py-5 text-white rounded-[1.75rem] font-bold text-base shadow-xl transition-all active:scale-95 disabled:opacity-30 disabled:grayscale flex items-center justify-center gap-3" 
                             style={{ backgroundColor: primaryColor }}
                           >
-                            Ver Disponibilidad <ArrowRight size={18} />
+                            Ver Horarios Disponibles <ArrowRight size={18} />
                           </button>
                         </div>
                         
@@ -291,29 +283,29 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                           onClick={() => setStep('sede')} 
                           className="w-full text-slate-300 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:text-brand-navy transition-colors mt-4"
                         >
-                          <ArrowLeft size={12} /> Regresar a sedes
+                          <ArrowLeft size={12} /> Regresar a Sedes
                         </button>
                     </div>
                   </div>
                 )}
 
-                {/* Paso 3: Horario */}
+                {/* Paso 3: Horarios */}
                 {step === 'schedule' && (
                   <div className="p-8 md:p-14 space-y-10 animate-fade-in max-w-2xl mx-auto w-full text-center flex-1 flex flex-col justify-center">
                     <div className="text-center">
-                      <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Horario Disponible</h2>
-                      <p className="text-slate-400 text-sm font-medium mt-2">Elige el día y la hora de tu preferencia.</p>
+                      <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Horarios Disponibles</h2>
+                      <p className="text-slate-400 text-sm font-medium mt-2">Selecciona la fecha y hora de tu preferencia.</p>
                     </div>
 
                     <div className="space-y-8">
                       <div className="relative max-w-xs mx-auto">
-                        <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-primary" size={20} />
+                        <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-primary" size={22} />
                         <input 
                           type="date" 
                           min={new Date().toISOString().split('T')[0]} 
                           value={booking.date} 
                           onChange={(e) => setBooking(prev => ({...prev, date: e.target.value}))} 
-                          className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none text-base shadow-inner appearance-none transition-all" 
+                          className="w-full pl-16 pr-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none text-base shadow-inner appearance-none transition-all" 
                           style={{ '--tw-ring-color': primaryColor } as any} 
                         />
                       </div>
@@ -323,7 +315,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                               <button 
                                 key={t} 
                                 onClick={() => setBooking(prev => ({...prev, time: t}))} 
-                                className={`py-4 rounded-xl font-ubuntu font-bold text-base border-2 transition-all duration-300 active:scale-95 ${booking.time === t ? 'text-white shadow-lg' : 'bg-white text-slate-400 border-slate-50 hover:border-brand-primary/20'}`} 
+                                className={`py-4.5 rounded-2xl font-ubuntu font-bold text-base border-2 transition-all duration-300 active:scale-95 ${booking.time === t ? 'text-white shadow-xl' : 'bg-white text-slate-400 border-slate-50 hover:border-brand-primary/30'}`} 
                                 style={{ 
                                   backgroundColor: booking.time === t ? primaryColor : undefined, 
                                   borderColor: booking.time === t ? primaryColor : undefined 
@@ -338,33 +330,33 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                         <button 
                           disabled={!booking.time} 
                           onClick={() => setStep('confirm')} 
-                          className="w-full py-5 text-white rounded-[1.5rem] font-bold text-base shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3" 
+                          className="w-full py-5 text-white rounded-[1.75rem] font-bold text-base shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3" 
                           style={{ backgroundColor: primaryColor }}
                         >
                           Confirmar Selección <ArrowRight size={18} />
                         </button>
-                        <button onClick={() => setStep('info')} className="mt-6 text-slate-300 font-bold text-[10px] uppercase tracking-widest hover:text-brand-navy transition-all">Regresar a mis datos</button>
+                        <button onClick={() => setStep('info')} className="mt-6 text-slate-300 font-bold text-[10px] uppercase tracking-widest hover:text-brand-navy transition-all">Modificar mis datos</button>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Paso 4: Resumen */}
+                {/* Paso 4: Confirmación Final */}
                 {step === 'confirm' && (
                   <div className="p-8 md:p-14 space-y-10 animate-fade-in max-w-xl mx-auto w-full flex-1 flex flex-col justify-center">
                     <div className="text-center">
                       <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Confirmación</h2>
-                      <p className="text-slate-400 text-sm font-medium mt-2">Verifica los detalles de tu cita profesional.</p>
+                      <p className="text-slate-400 text-sm font-medium mt-2">Verifica los detalles de tu cita.</p>
                     </div>
 
                     <div className="bg-slate-50/70 rounded-[2.5rem] p-8 border border-slate-100 shadow-inner space-y-6">
                         <div className="flex items-center gap-5 pb-6 border-b border-slate-200">
-                          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-brand-navy shadow-sm border border-slate-100 font-ubuntu font-bold text-2xl">
+                          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-brand-navy shadow-sm border border-slate-100 font-ubuntu font-bold text-3xl">
                             {booking.patientName.charAt(0)}
                           </div>
                           <div>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Paciente</p>
-                            <p className="text-xl font-ubuntu font-bold text-brand-navy">{booking.patientName}</p>
+                            <p className="text-xl font-ubuntu font-bold text-brand-navy leading-tight">{booking.patientName}</p>
                           </div>
                         </div>
 
@@ -402,32 +394,32 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                           {isSubmitting ? (
                             <Loader2 size={24} className="animate-spin" />
                           ) : (
-                            <><MessageCircle size={28} /> Finalizar en WhatsApp</>
+                            <><MessageCircle size={32} /> Finalizar en WhatsApp</>
                           )}
                       </button>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase text-center tracking-widest leading-relaxed px-4">
-                         Al confirmar se enviará una solicitud directa a la sede para validar disponibilidad de su atención de <b>Podología Integral</b>.
+                      <p className="text-[10px] text-slate-400 font-bold uppercase text-center tracking-widest leading-relaxed px-6">
+                         Se enviará una solicitud directa a la sede para validar disponibilidad de tu atención de <b>Podología Integral</b>.
                       </p>
                     </div>
                   </div>
                 )}
             </div>
 
-            {/* Footer de Marca */}
-            <div className="mt-12 text-center animate-fade-in">
+            {/* Créditos */}
+            <div className="mt-14 text-center animate-fade-in">
               <div className="inline-flex flex-col items-center gap-4">
-                <p className="text-slate-300 text-[10px] font-bold uppercase tracking-[0.4em] mb-1 text-balance px-6">Healthcare Management Ecosystem</p>
+                <p className="text-slate-300 text-[10px] font-bold uppercase tracking-[0.4em] mb-1">Healthcare Management Ecosystem</p>
                 <a 
                   href="https://gaorsystem.vercel.app/" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-4 bg-white px-8 py-4 rounded-[2rem] shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-slate-100 hover:shadow-xl transition-all hover:-translate-y-1"
+                  className="group flex items-center gap-4 bg-white px-8 py-4 rounded-[2.25rem] shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-slate-100 hover:shadow-xl transition-all hover:-translate-y-1"
                 >
                   <div className="w-11 h-11 bg-brand-navy rounded-xl flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
                      <Zap className="text-brand-primary fill-brand-primary" size={24} />
                   </div>
                   <div className="text-left">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Desarrollado con excelencia por</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Desarrollado por</p>
                     <p className="text-base font-ubuntu font-bold text-brand-navy group-hover:text-brand-purple transition-colors">Gaor<span className="text-brand-purple">System</span></p>
                   </div>
                   <ChevronRight size={18} className="text-slate-200 group-hover:text-brand-purple group-hover:translate-x-1 transition-all" />
