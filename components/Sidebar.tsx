@@ -6,15 +6,11 @@ import {
   Users, 
   Clock, 
   LogOut,
-  ChevronRight,
   ExternalLink,
-  ShieldCheck,
   Activity,
-  Building2,
   UserCog,
-  Palette,
   Settings,
-  Layers
+  ChevronRight
 } from 'lucide-react';
 import { ViewState, UserRole } from '../types';
 
@@ -22,134 +18,80 @@ interface SidebarProps {
   currentView: ViewState['currentView'];
   onViewChange: (view: ViewState['currentView']) => void;
   userRole?: UserRole;
+  onLogout?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, userRole = UserRole.ADMIN }) => {
-  const isSuper = userRole === UserRole.SUPER_ADMIN;
-
-  // Definición de ítems con permisos granulares
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, userRole = UserRole.RECEPCIONIST, onLogout }) => {
+  const isAdmin = userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
+  
   const menuItems = [
-    { 
-      id: 'dashboard', 
-      icon: LayoutDashboard, 
-      label: 'Dashboard', 
-      roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.RECEPCIONIST] 
-    },
-    { 
-      id: 'appointments', 
-      icon: CalendarDays, 
-      label: 'Agenda Maestra', 
-      roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.RECEPCIONIST, UserRole.SPECIALIST] 
-    },
-    { 
-      id: 'patients', 
-      icon: Users, 
-      label: 'Expedientes', 
-      roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.RECEPCIONIST, UserRole.SPECIALIST] 
-    },
-    { 
-      id: 'staff-management', 
-      icon: UserCog, 
-      label: 'Personal & Staff', 
-      roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN] 
-    },
-    { 
-      id: 'schedules', 
-      icon: Clock, 
-      label: 'Sedes y Horarios', 
-      roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN] 
-    },
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { id: 'appointments', icon: CalendarDays, label: 'Agenda Citas' },
+    { id: 'patients', icon: Users, label: 'Expedientes' },
+    { id: 'staff-management', icon: UserCog, label: isAdmin ? 'Especialistas' : 'Ver Equipo' },
+    { id: 'schedules', icon: Clock, label: isAdmin ? 'Configurar Horarios' : 'Mis Horarios' },
   ];
 
-  // Filtrar ítems según rol
-  const visibleItems = menuItems.filter(item => item.roles.includes(userRole));
-
   return (
-    <div className="w-64 h-screen sidebar-gradient flex flex-col text-white fixed left-0 top-0 z-50 shadow-2xl transition-all duration-500 border-r border-white/5">
-      {/* Brand Header */}
-      <div className="px-8 pt-10 pb-12 flex items-center gap-4 group cursor-pointer" onClick={() => onViewChange('dashboard')}>
-        <div className="w-12 h-12 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/20 shadow-2xl group-hover:scale-110 transition-transform">
-          <Activity size={28} className="text-brand-secondary" />
-        </div>
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-ubuntu font-bold tracking-tight leading-none">Bee</h1>
-          <p className="text-[9px] text-white/40 font-bold uppercase tracking-[0.4em] mt-2">Intelligence</p>
-        </div>
+    <div className="w-64 fixed h-full bg-[#0D0D33] p-6 flex flex-col border-r border-white/5 z-50">
+      <div className="mb-10 px-2 flex items-center gap-3">
+         <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center shadow-lg">
+            <Activity className="text-white" size={24} />
+         </div>
+         <div>
+            <h1 className="text-white font-ubuntu font-bold text-xl tracking-tight leading-none">Feet Care</h1>
+            <p className="text-[8px] text-brand-primary font-bold uppercase tracking-[0.3em] mt-1.5">Clínica Digital</p>
+         </div>
       </div>
 
-      {/* Main Navigation */}
-      <nav className="flex-1 px-4 space-y-1">
-        <div className="px-5 mb-4">
-           <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.4em]">Clínica Activa</p>
-        </div>
-        
-        {visibleItems.map((item) => {
-          const isActive = currentView === item.id;
-          return (
+      <nav className="flex-1 space-y-2">
+        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em] mb-4 px-2">Navegación</p>
+        {menuItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => onViewChange(item.id as any)}
+            className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all font-bold text-xs group ${
+              currentView === item.id 
+                ? 'bg-brand-primary text-white shadow-xl shadow-brand-primary/10' 
+                : 'text-slate-400 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <item.icon size={18} className={`${currentView === item.id ? 'text-white' : 'text-slate-500 group-hover:text-brand-primary'}`} />
+            {item.label}
+          </button>
+        ))}
+
+        {userRole === UserRole.SUPER_ADMIN && (
+          <div className="pt-6 mt-6 border-t border-white/5 space-y-2">
+            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em] mb-4 px-2">Configuración</p>
             <button
-              key={item.id}
-              onClick={() => onViewChange(item.id as any)}
-              className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 group relative ${
-                isActive 
-                  ? 'bg-white text-brand-navy shadow-xl scale-[1.02]' 
-                  : 'text-white/50 hover:text-white hover:bg-white/5'
+              onClick={() => onViewChange('saas-admin' as any)}
+              className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all font-bold text-xs group ${
+                currentView === 'saas-admin' 
+                  ? 'bg-brand-primary text-white' 
+                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <item.icon size={20} className={isActive ? 'text-brand-secondary' : 'group-hover:text-brand-secondary transition-colors'} />
-              <span className={`font-bold text-sm tracking-tight ${isActive ? 'text-brand-navy' : ''}`}>{item.label}</span>
-              {isActive && (
-                <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-brand-secondary shadow-[0_0_8px_rgba(1,126,132,0.8)]" />
-              )}
+              <Settings size={18} />
+              Panel Master
             </button>
-          );
-        })}
-
-        {/* Global Admin Section for Super Admin & Local Admin Settings */}
-        <div className="pt-8 mt-8 border-t border-white/10 space-y-1">
-          <div className="px-5 mb-4">
-             <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.4em]">Configuración</p>
           </div>
-          
-          {(userRole === UserRole.ADMIN || isSuper) && (
-            <button
-              onClick={() => onViewChange('saas-admin')} 
-              className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 group ${
-                currentView === 'saas-admin' ? 'bg-white text-brand-navy shadow-xl scale-[1.02]' : 'text-white/50 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Palette size={20} className={currentView === 'saas-admin' ? 'text-brand-accent' : 'group-hover:text-brand-accent transition-colors'} />
-              <span className={`font-bold text-sm tracking-tight ${currentView === 'saas-admin' ? 'text-brand-navy' : ''}`}>
-                {isSuper ? 'Marca & SaaS' : 'Portal de Marca'}
-              </span>
-            </button>
-          )}
-
-          {isSuper && (
-            <div className="px-2 mt-4">
-               <div className="bg-brand-navy/40 border border-white/5 p-4 rounded-[1.5rem] space-y-3">
-                  <div className="flex items-center gap-2 text-[8px] font-bold text-brand-accent uppercase tracking-widest">
-                     <ShieldCheck size={12} /> Nivel Super Admin
-                  </div>
-                  <p className="text-[10px] text-white/40 leading-relaxed font-medium">Tienes acceso total a la configuración global y auditoría de todas las sedes.</p>
-               </div>
-            </div>
-          )}
-        </div>
+        )}
       </nav>
 
-      {/* Footer Actions */}
-      <div className="p-6 space-y-3">
+      <div className="pt-6 border-t border-white/5 space-y-4">
         <button 
           onClick={() => onViewChange('portal')}
-          className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 hover:text-white transition-all text-[11px] font-bold shadow-lg group"
+          className="w-full flex items-center justify-between gap-4 px-4 py-3 bg-white/5 rounded-xl text-slate-300 font-bold text-[10px] hover:bg-white/10 transition-all border border-white/5 group"
         >
-          <span>Previsualizar Portal</span>
-          <ExternalLink size={14} className="opacity-40 group-hover:text-brand-secondary transition-all" />
+          <span className="flex items-center gap-3">
+             <ExternalLink size={14} className="text-brand-primary" /> Ver Portal Web
+          </span>
+          <ChevronRight size={12} className="opacity-30 group-hover:translate-x-1 transition-transform" />
         </button>
-
         <button 
-          onClick={() => window.location.reload()}
-          className="w-full flex items-center gap-4 px-6 py-4 text-white/20 hover:text-red-400 transition-all text-xs font-bold uppercase tracking-[0.2em] group"
+          onClick={() => onLogout ? onLogout() : window.location.reload()}
+          className="w-full flex items-center gap-4 px-4 py-3.5 text-slate-500 font-bold text-xs hover:text-red-400 transition-all"
         >
           <LogOut size={18} />
           Cerrar Sesión

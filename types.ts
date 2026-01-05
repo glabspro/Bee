@@ -9,29 +9,21 @@ export enum AppointmentStatus {
 }
 
 export enum UserRole {
-  SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMINISTRADOR',
   RECEPCIONIST = 'RECEPCIONISTA',
-  SPECIALIST = 'ESPECIALISTA'
-}
-
-export interface Company {
-  id: string;
-  name: string;
-  logo?: string;
-  portalHero?: string;
-  primaryColor: string;
-  active: boolean;
+  SPECIALIST = 'ESPECIALISTA',
+  SUPER_ADMIN = 'SUPER_ADMIN'
 }
 
 export interface User {
   id: string;
   name: string;
-  email: string;
+  email?: string;
+  accessKey?: string; // Campo para la clave de acceso personalizada
   role: UserRole;
-  companyId: string;
-  sedeIds?: string[]; // Si es null, tiene acceso a todas
+  sedeIds?: string[];
   avatar?: string;
+  companyId: string;
 }
 
 export interface TimeInterval {
@@ -50,8 +42,8 @@ export interface Sede {
   address: string;
   phone: string;
   whatsapp: string;
-  companyId: string;
   availability?: Record<string, DayAvailability>;
+  companyId: string;
 }
 
 export interface Professional {
@@ -60,16 +52,7 @@ export interface Professional {
   specialty: string;
   avatar?: string;
   sedeIds: string[];
-  companyId: string;
   userId: string;
-}
-
-export interface Service {
-  id: string;
-  name: string;
-  duration: number; 
-  price: number;
-  category: string;
   companyId: string;
 }
 
@@ -113,19 +96,25 @@ export interface Appointment {
   companyId: string;
 }
 
-export interface AppNotification {
+export interface Service {
   id: string;
-  title: string;
-  message: string;
-  time: string;
-  read: boolean;
-  type: 'NEW_PORTAL' | 'UPCOMING' | 'SYSTEM';
-  appointmentId?: string;
+  name: string;
+  duration: number;
+  price: number;
+  category: string;
   companyId: string;
 }
 
+export interface Company {
+  id: string;
+  name: string;
+  primaryColor: string;
+  logo?: string;
+  portalHero?: string;
+}
+
 export interface ViewState {
-  currentView: 'login' | 'dashboard' | 'appointments' | 'patients' | 'schedules' | 'portal' | 'clinical-record' | 'saas-admin' | 'staff-management';
+  currentView: 'login' | 'dashboard' | 'appointments' | 'patients' | 'schedules' | 'portal' | 'clinical-record' | 'staff-management';
   activeAppointmentId?: string;
   user?: User;
 }

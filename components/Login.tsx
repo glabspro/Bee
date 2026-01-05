@@ -1,87 +1,118 @@
 
 import React, { useState } from 'react';
-import { Key, ArrowRight, Activity, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
-import { UserRole } from '../types';
+import { Key, ArrowRight, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
+import { User, UserRole } from '../types';
 
 interface LoginProps {
-  onLogin: (role: UserRole) => void;
+  users: User[];
+  onLogin: (user: User) => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC<LoginProps> = ({ users, onLogin }) => {
   const [accessCode, setAccessCode] = useState('');
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(false);
     setIsLoading(true);
+    setError(false);
 
-    // Validación de roles por código (ahora más flexibles)
+    // Simulamos una pequeña demora para feedback visual
     setTimeout(() => {
-      const code = accessCode.toLowerCase();
-      if (code === 'super123') {
-        onLogin(UserRole.SUPER_ADMIN);
-      } else if (code === 'admin123') {
-        onLogin(UserRole.ADMIN);
+      const code = accessCode.trim().toUpperCase();
+      
+      // 1. Verificación de códigos maestros de emergencia
+      if (code === 'SUPER123') {
+        onLogin({
+          id: 'master-admin',
+          name: 'Super Administrador',
+          role: UserRole.SUPER_ADMIN,
+          companyId: 'feet-care-main',
+          avatar: 'https://i.pravatar.cc/150?u=master'
+        });
+        return;
+      }
+
+      // 2. Verificación contra usuarios de la base de datos (Supabase)
+      const foundUser = users.find(u => u.accessKey?.toUpperCase() === code);
+
+      if (foundUser) {
+        onLogin(foundUser);
       } else {
         setError(true);
         setIsLoading(false);
       }
-    }, 600);
+    }, 1000);
   };
 
   return (
-    <div className="min-h-screen bg-brand-bg flex items-center justify-center p-6 font-inter">
-      <div className="max-w-5xl w-full bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(13,13,75,0.1)] overflow-hidden flex flex-col md:flex-row min-h-[600px] border border-slate-100 animate-fade-in">
+    <div className="min-h-screen bg-slate-200 flex items-center justify-center p-4 sm:p-6 font-inter">
+      <div className="max-w-[1100px] w-full bg-white rounded-4xl shadow-[0_30px_60px_-12px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col md:flex-row min-h-[660px]">
         
-        {/* Lado Izquierdo: Branding & Info */}
-        <div className="md:w-5/12 p-12 text-white relative flex flex-col justify-between overflow-hidden sidebar-gradient">
-          <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-          <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-brand-primary/10 rounded-full blur-3xl"></div>
-
+        {/* PANEL IZQUIERDO: BRANDING */}
+        <div className="w-full md:w-[45%] bg-[#0D0D33] p-12 lg:p-16 flex flex-col justify-between relative overflow-hidden">
           <div className="relative z-10">
-            <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-8 border border-white/20">
-              <Activity size={32} />
+            <div className="w-16 h-16 bg-brand-primary rounded-2xl flex items-center justify-center shadow-lg mb-14">
+               <ShieldCheck className="text-white" size={32} />
             </div>
-            <h1 className="text-5xl font-ubuntu font-bold mb-6 tracking-tight">Bee</h1>
-            <p className="text-white/70 text-lg font-medium leading-relaxed max-w-xs">
-              SaaS de gestión clínica inteligente para consultorios modernos.
+            
+            <div className="space-y-5">
+              <div className="flex items-center gap-3">
+                 <div className="h-[2px] w-6 bg-brand-primary"></div>
+                 <span className="text-brand-primary font-bold text-[10px] uppercase tracking-[0.4em]">Plataforma Clínica</span>
+              </div>
+              <h1 className="text-white text-7xl font-ubuntu font-bold tracking-tight">
+                Feet <span className="text-brand-primary italic">Care</span>
+              </h1>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">
+                Podología Clínica Profesional
+              </p>
+            </div>
+            
+            <p className="text-slate-300/80 text-base font-medium leading-relaxed max-w-[320px] mt-12">
+              Ingrese su clave personal asignada por administración para acceder a sus funciones.
             </p>
           </div>
 
-          <div className="space-y-6 relative z-10">
-            <div className="flex items-center gap-4 p-5 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10">
-              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                <ShieldCheck size={20} className="text-brand-accent" />
+          <div className="relative z-10 mt-12">
+            <div className="inline-flex items-center gap-4 bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10">
+              <div className="w-11 h-11 rounded-xl bg-brand-primary/10 flex items-center justify-center text-brand-primary">
+                <ShieldCheck size={22} />
               </div>
-              <div>
-                <p className="font-bold text-sm">Seguridad Bee</p>
-                <p className="text-[10px] text-white/50 uppercase font-bold tracking-widest">Acceso Jerárquico</p>
+              <div className="flex flex-col">
+                <span className="text-white font-bold text-[11px] tracking-wide">Acceso Seguro</span>
+                <span className="text-white/30 text-[9px] font-bold uppercase tracking-widest">Sincronización Cloud</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Lado Derecho: Formulario */}
-        <div className="md:w-7/12 p-12 lg:p-20 flex flex-col justify-center bg-white">
-          <div className="max-w-sm w-full mx-auto">
-            <h2 className="text-4xl font-ubuntu font-bold text-brand-navy mb-3">Bienvenido</h2>
-            <p className="text-slate-400 mb-12 font-medium">Ingresa tu clave de acceso personalizada.</p>
+        {/* PANEL DERECHO: FORMULARIO */}
+        <div className="flex-1 bg-white p-12 lg:p-20 flex flex-col justify-center relative">
+          <div className="absolute top-10 right-10 flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full border border-slate-100">
+             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Base de Datos Online</span>
+          </div>
+
+          <div className="max-w-md mx-auto w-full">
+            <div className="mb-14 text-left">
+              <h2 className="text-5xl font-ubuntu font-bold text-[#0D0D33] tracking-tight">
+                Acceso Personal
+              </h2>
+              <p className="text-slate-400 font-medium mt-4 text-base leading-relaxed">
+                Usa la clave de acceso que te entregó tu administrador.
+              </p>
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-bold text-brand-navy uppercase tracking-widest ml-1">Clave de Acceso</label>
-                  {error && (
-                    <span className="text-red-500 text-[10px] font-bold uppercase flex items-center gap-1 animate-pulse">
-                      <AlertCircle size={12} /> Código Inválido
-                    </span>
-                  )}
-                </div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em] ml-1">
+                  Tu Clave de Acceso
+                </label>
                 <div className="relative group">
-                  <div className={`absolute left-5 top-1/2 -translate-y-1/2 transition-colors ${error ? 'text-red-400' : 'text-slate-300 group-focus-within:text-brand-secondary'}`}>
-                    <Key size={20} />
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-primary">
+                    <Key size={22} />
                   </div>
                   <input 
                     type="password"
@@ -90,41 +121,46 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                       setAccessCode(e.target.value);
                       if (error) setError(false);
                     }}
-                    placeholder="Clave de acceso"
-                    className={`w-full pl-14 pr-6 py-5 bg-slate-50 border-2 rounded-2xl focus:bg-white outline-none transition-all font-bold text-brand-navy placeholder:text-slate-200 shadow-inner ${
-                      error ? 'border-red-100 focus:border-red-400' : 'border-transparent focus:border-brand-secondary'
-                    }`}
+                    className={`w-full pl-16 pr-8 py-5 bg-white border-2 rounded-3xl outline-none font-bold text-[#0D0D33] text-xl transition-all placeholder:text-slate-200 shadow-sm ${error ? 'border-red-200 focus:border-red-400' : 'border-brand-primary/10 focus:border-brand-primary/40'}`}
+                    placeholder="Escribe tu clave..."
+                    required
+                    autoFocus
                   />
                 </div>
+                {error && (
+                  <div className="flex items-center gap-2 px-2 text-red-500 animate-fade-in">
+                    <AlertCircle size={14}/>
+                    <p className="text-[10px] font-bold uppercase tracking-widest">La clave no coincide con ningún usuario activo</p>
+                  </div>
+                )}
               </div>
 
               <button 
                 type="submit"
                 disabled={isLoading || !accessCode}
-                className={`w-full py-5 text-white rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-3 active:scale-[0.98] ${
-                  isLoading 
-                    ? 'bg-slate-400 cursor-not-allowed' 
-                    : 'bg-brand-navy hover:shadow-[0_15px_30px_rgba(13,13,75,0.2)]'
-                }`}
+                className="w-full py-6 bg-brand-navy text-white rounded-[1.75rem] font-bold text-lg flex items-center justify-center gap-4 hover:bg-brand-primary transition-all shadow-xl active:scale-[0.98] disabled:opacity-50 group"
               >
-                {isLoading ? <Loader2 className="animate-spin" size={24} /> : 'Entrar'}
-                {!isLoading && <ArrowRight size={22} className="text-brand-secondary" />}
+                {isLoading ? (
+                  <Loader2 size={24} className="animate-spin" />
+                ) : (
+                  <>
+                    <span>Entrar al Sistema</span>
+                    <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </button>
             </form>
 
-            <div className="mt-16 pt-10 border-t border-slate-50 flex flex-col gap-4">
-              <p className="text-[9px] font-bold text-slate-300 uppercase text-center tracking-[0.3em]">Credenciales Bee</p>
-              <div className="flex justify-center gap-3">
-                <div className="px-4 py-2 bg-slate-50 rounded-xl text-[9px] font-bold text-slate-400 border border-slate-100 uppercase tracking-tighter">
-                  Admin: <span className="text-brand-navy ml-1 font-ubuntu">admin123</span>
-                </div>
-                <div className="px-4 py-2 bg-slate-50 rounded-xl text-[9px] font-bold text-slate-400 border border-slate-100 uppercase tracking-tighter">
-                  Super: <span className="text-brand-navy ml-1 font-ubuntu">super123</span>
-                </div>
-              </div>
+            <div className="mt-20 text-center">
+               <span className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.4em] flex items-center justify-center gap-4">
+                  <div className="w-6 h-px bg-slate-100"></div>
+                  Feet Care Cloud v2.5
+                  <div className="w-6 h-px bg-slate-100"></div>
+               </span>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );
