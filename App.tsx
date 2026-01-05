@@ -25,6 +25,18 @@ const generateUUID = () => {
   });
 };
 
+const slugify = (text: string) => {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+};
+
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [viewState, setViewState] = useState<ViewState>({ currentView: 'login' });
@@ -38,16 +50,32 @@ const App: React.FC = () => {
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // EFECTO DE ENRUTAMIENTO INICIAL: Detecta si la URL es /feetcare o similar
+  useEffect(() => {
+    if (!isLoading && companies.length > 0) {
+      const path = window.location.pathname.replace('/', '');
+      if (path && path !== 'login' && path !== 'dashboard') {
+        // Buscamos si el path coincide con el slug de alguna clínica
+        const targetCompany = companies.find(c => slugify(c.name) === path);
+        if (targetCompany) {
+          setCurrentCompanyId(targetCompany.id);
+          setViewState({ currentView: 'portal' });
+        }
+      }
+    }
+  }, [isLoading, companies]);
+
   useEffect(() => {
     const fetchGlobalData = async () => {
       try {
         const { data: cos } = await supabase.from('companies').select('*');
         if (cos) {
-          setCompanies(cos.map(c => ({
+          const mappedCompanies = cos.map(c => ({
             ...c,
             portalHero: c.portal_hero,
             primaryColor: c.primary_color
-          })));
+          }));
+          setCompanies(mappedCompanies);
         }
         
         const { data: usrs } = await supabase.from('users').select('*');
@@ -141,9 +169,7 @@ const App: React.FC = () => {
     }
     
     try {
-      // Generamos el ID usando el nuevo generador robusto
       const newId = generateUUID();
-      
       const payload = { 
         id: newId,
         name: sede.name,
@@ -157,10 +183,8 @@ const App: React.FC = () => {
       const { data, error } = await supabase.from('sedes').insert([payload]).select();
       
       if (error) {
-        const supabaseError = error.message || "Error desconocido en Supabase";
-        const supabaseDetail = error.details ? ` Detalles: ${error.details}` : "";
         console.error("Supabase Error Response:", error);
-        alert(`❌ Error de Base de Datos: ${supabaseError}${supabaseDetail}`);
+        alert(`❌ Error de Base de Datos: ${error.message}`);
         return null;
       }
       
@@ -171,9 +195,8 @@ const App: React.FC = () => {
       }
       return null;
     } catch (err: any) {
-      const catchMsg = err instanceof Error ? err.message : (typeof err === 'object' ? JSON.stringify(err) : String(err));
       console.error("Exception in handleAddSede:", err);
-      alert(`🚨 Error Fatal: ${catchMsg}`);
+      alert(`🚨 Error Fatal: ${err.message}`);
       return null;
     }
   };

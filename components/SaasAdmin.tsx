@@ -25,7 +25,8 @@ import {
   MousePointer2,
   Lock,
   CheckCircle,
-  Copy
+  Copy,
+  Eye
 } from 'lucide-react';
 import { Company, User, UserRole, Sede } from '../types';
 
@@ -53,11 +54,8 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
   currentCompanyId 
 }) => {
   const isSuperAdmin = userRole === UserRole.SUPER_ADMIN;
-  const [showCompanyModal, setShowCompanyModal] = useState(false);
-  const [showUserModal, setShowUserModal] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<'tenants' | 'users' | 'settings'>(isSuperAdmin ? 'tenants' : 'settings');
-  
-  const [clinicDetailTab, setClinicDetailTab] = useState<'brand' | 'portal' | 'access'>('brand');
+  const [clinicDetailTab, setClinicDetailTab] = useState<'brand' | 'portal'>('brand');
   const [editingClinicId, setEditingClinicId] = useState<string | null>(null);
 
   const activeClinic = useMemo(() => 
@@ -77,65 +75,147 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
     e.preventDefault();
     if (brandForm.id) {
       onUpdateCompany(brandForm as Company);
-      alert("✅ ¡Identidad corporativa actualizada! Los pacientes verán los cambios en el portal.");
+      alert("✅ ¡Identidad corporativa actualizada! Los cambios son visibles en el portal de pacientes de inmediato.");
     }
   };
 
-  const clinicUsers = useMemo(() => 
-    users.filter(u => u.companyId === (editingClinicId || currentCompanyId)),
-    [users, editingClinicId, currentCompanyId]
-  );
+  const slugify = (text: string) => {
+    return text
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')           // Reemplaza espacios con -
+      .replace(/[^\w\-]+/g, '')       // Elimina caracteres no alfanuméricos
+      .replace(/\-\-+/g, '-')         // Reemplaza múltiples - con uno solo
+      .replace(/^-+/, '')             // Elimina - al inicio
+      .replace(/-+$/, '');            // Elimina - al final
+  };
 
-  const availableSedes = useMemo(() => {
-    return sedes.filter(s => s?.companyId === (editingClinicId || currentCompanyId));
-  }, [sedes, editingClinicId, currentCompanyId]);
+  const currentOrigin = window.location.origin;
+  const businessSlug = activeClinic ? slugify(activeClinic.name) : 'portal';
+  const portalFullUrl = `${currentOrigin}/${businessSlug}`;
 
   const copyPortalLink = () => {
-    const link = `https://bee-clinical.app/portal/${activeClinic?.id || 'main'}`;
-    navigator.clipboard.writeText(link);
-    alert("Enlace copiado al portapapeles");
+    navigator.clipboard.writeText(portalFullUrl);
+    alert("✅ Enlace profesional copiado: " + portalFullUrl);
   };
 
   const renderBrandingForm = () => (
-    <div className="max-w-4xl mx-auto bg-white rounded-[4rem] border border-slate-100 shadow-sm p-12 space-y-12 animate-fade-in">
-       <div className="flex items-center gap-6">
-          <div className="w-16 h-16 bg-brand-lightPrimary rounded-3xl flex items-center justify-center text-brand-primary shadow-inner">
-             <Palette size={32} />
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-10 animate-fade-in">
+       {/* Formulario de Configuración */}
+       <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm p-10 space-y-10">
+          <div className="flex items-center gap-5">
+             <div className="w-14 h-14 bg-brand-lightPrimary rounded-2xl flex items-center justify-center text-brand-primary shadow-inner">
+                <Palette size={28} />
+             </div>
+             <div>
+                <h3 className="text-2xl font-ubuntu font-bold text-brand-navy">Personalización de Marca</h3>
+                <p className="text-slate-400 text-xs font-medium">Define la identidad visual de tu clínica.</p>
+             </div>
           </div>
-          <div>
-             <h3 className="text-3xl font-ubuntu font-bold text-brand-navy">Personalización de Marca</h3>
-             <p className="text-slate-400 font-medium">Define cómo los pacientes perciben tu clínica.</p>
-          </div>
+
+          <form onSubmit={handleUpdateBrand} className="space-y-8">
+             <div className="space-y-6">
+                <div className="space-y-2">
+                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                     <Type size={12} /> Nombre de la Clínica
+                   </label>
+                   <input 
+                    className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary font-bold text-brand-navy outline-none shadow-inner" 
+                    value={brandForm.name || ''} 
+                    onChange={e => setBrandForm({...brandForm, name: e.target.value})} 
+                   />
+                </div>
+
+                <div className="space-y-2">
+                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                     <Palette size={12} /> Color de Marca (HEX)
+                   </label>
+                   <div className="flex gap-4">
+                      <input 
+                        className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary font-bold text-brand-navy outline-none shadow-inner" 
+                        value={brandForm.primaryColor || ''} 
+                        onChange={e => setBrandForm({...brandForm, primaryColor: e.target.value})} 
+                      />
+                      <div className="w-14 h-14 rounded-2xl border border-slate-100 shadow-inner shrink-0" style={{ backgroundColor: brandForm.primaryColor }}></div>
+                   </div>
+                </div>
+
+                <div className="space-y-2">
+                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                     <ImageIcon size={12} /> URL del Logotipo (PNG/JPG)
+                   </label>
+                   <input 
+                    placeholder="https://tudominio.com/logo.png" 
+                    className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary text-xs font-medium outline-none shadow-inner" 
+                    value={brandForm.logo || ''} 
+                    onChange={e => setBrandForm({...brandForm, logo: e.target.value})} 
+                   />
+                </div>
+
+                <div className="space-y-2">
+                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                     <ImageIcon size={12} /> Imagen de Portada Portal (Banner)
+                   </label>
+                   <input 
+                    placeholder="https://tudominio.com/hero.jpg" 
+                    className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary text-xs font-medium outline-none shadow-inner" 
+                    value={brandForm.portalHero || ''} 
+                    onChange={e => setBrandForm({...brandForm, portalHero: e.target.value})} 
+                   />
+                </div>
+             </div>
+
+             <button type="submit" className="w-full py-5 bg-brand-navy text-white rounded-[2rem] font-bold flex items-center justify-center gap-3 shadow-2xl hover:bg-brand-secondary transition-all">
+                <Save size={18} /> Guardar Cambios de Identidad
+             </button>
+          </form>
        </div>
 
-       <form onSubmit={handleUpdateBrand} className="space-y-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-             <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><Type size={12} /> Nombre de la Clínica</label>
-                <input className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary font-bold text-brand-navy outline-none shadow-inner" value={brandForm.name || ''} onChange={e => setBrandForm({...brandForm, name: e.target.value})} />
+       {/* Previsualización en Vivo */}
+       <div className="space-y-6">
+          <div className="bg-slate-900 rounded-[3.5rem] p-10 text-white relative overflow-hidden shadow-2xl min-h-[400px] flex flex-col justify-between">
+             <div className="absolute inset-0 opacity-40">
+                <img 
+                  src={brandForm.portalHero || "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000"} 
+                  className="w-full h-full object-cover blur-[2px]" 
+                  alt="Preview Hero"
+                />
              </div>
-             <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><Palette size={12} /> Color Principal (HEX)</label>
-                <div className="flex gap-4">
-                   <input className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary font-bold text-brand-navy outline-none shadow-inner" value={brandForm.primaryColor || ''} onChange={e => setBrandForm({...brandForm, primaryColor: e.target.value})} />
-                   <div className="w-14 h-14 rounded-2xl border border-slate-100 shadow-inner shrink-0" style={{ backgroundColor: brandForm.primaryColor }}></div>
+             <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+             
+             <div className="relative z-10 flex justify-between items-start">
+                <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20 text-[9px] font-bold uppercase tracking-widest">
+                   Previsualización Portal
+                </div>
+                <div className="w-16 h-16 bg-white rounded-2xl p-2 flex items-center justify-center shadow-xl">
+                   <img src={brandForm.logo || "https://placeholder.com/150"} className="max-w-full max-h-full object-contain" alt="Preview Logo" />
+                </div>
+             </div>
+
+             <div className="relative z-10 space-y-4 text-center">
+                <h4 className="text-4xl font-ubuntu font-bold">{brandForm.name || 'Tu Clínica'}</h4>
+                <div className="flex justify-center gap-2">
+                   <div className="px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest text-white border border-white/30" style={{ backgroundColor: brandForm.primaryColor }}>
+                      Botón de Acción
+                   </div>
                 </div>
              </div>
           </div>
-          <div className="space-y-6">
-             <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><ImageIcon size={12} /> URL del Logotipo</label>
-                <input placeholder="https://ejemplo.com/logo.png" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary text-xs font-medium outline-none shadow-inner" value={brandForm.logo || ''} onChange={e => setBrandForm({...brandForm, logo: e.target.value})} />
+
+          <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 flex items-center gap-6">
+             <div className="w-12 h-12 bg-green-50 text-green-500 rounded-xl flex items-center justify-center">
+                <CheckCircle size={24} />
              </div>
-             <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><ImageIcon size={12} /> URL Fondo del Portal (Banner)</label>
-                <input placeholder="https://ejemplo.com/hero.jpg" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary text-xs font-medium outline-none shadow-inner" value={brandForm.portalHero || ''} onChange={e => setBrandForm({...brandForm, portalHero: e.target.value})} />
+             <div className="flex-1">
+                <p className="text-xs font-bold text-brand-navy">URL Personalizada</p>
+                <p className="text-[10px] text-slate-400 font-medium">Tus pacientes verán: <span className="text-brand-secondary font-bold">/{businessSlug}</span></p>
              </div>
+             <button onClick={() => setClinicDetailTab('portal')} className="text-brand-secondary text-[10px] font-bold uppercase tracking-widest hover:underline">
+                Ver Enlace
+             </button>
           </div>
-          <button type="submit" className="w-full py-5 bg-brand-navy text-white rounded-[2rem] font-bold flex items-center justify-center gap-3 shadow-2xl hover:bg-brand-secondary transition-all">
-             <Save size={18} /> Guardar Identidad Corporativa
-          </button>
-       </form>
+       </div>
     </div>
   );
 
@@ -145,7 +225,7 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
         <div>
           <div className="flex items-center gap-2 text-brand-secondary font-bold text-[10px] uppercase tracking-[0.3em] mb-3">
              <ShieldCheck size={14} /> 
-             {isSuperAdmin ? 'Bee Global Clinical SaaS' : 'Identidad de la Clínica'}
+             {isSuperAdmin ? 'Bee Global Clinical SaaS' : 'Panel de Control Local'}
           </div>
           
           <div className="flex items-center gap-4">
@@ -179,6 +259,9 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
                 <button onClick={() => setActiveSubTab('settings')} className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeSubTab === 'settings' ? 'bg-white text-brand-navy shadow-sm' : 'text-slate-400'}`}>
                   <Palette size={14} /> Marca
                 </button>
+                <button onClick={() => { setActiveSubTab('settings'); setClinicDetailTab('portal'); }} className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeSubTab === 'settings' && clinicDetailTab === 'portal' ? 'bg-white text-brand-navy shadow-sm' : 'text-slate-400'}`}>
+                  <Globe size={14} /> Enlace Portal
+                </button>
              </>
            ) : (
              <>
@@ -193,63 +276,91 @@ const SaasAdmin: React.FC<SaasAdminProps> = ({
         </div>
       </header>
 
-      {/* VISTA SETTINGS (MARCA) PARA ADMINS LOCALES */}
-      {!editingClinicId && activeSubTab === 'settings' && renderBrandingForm()}
+      {/* CONTENIDO DINÁMICO */}
+      <div className="px-4">
+        {!editingClinicId && activeSubTab === 'settings' && (
+           clinicDetailTab === 'brand' ? renderBrandingForm() : (
+             <div className="max-w-4xl mx-auto space-y-10 animate-fade-in">
+                <div className="bg-brand-navy rounded-[4rem] p-16 text-white relative overflow-hidden shadow-2xl border border-white/5">
+                   <div className="relative z-10 max-w-2xl space-y-8">
+                      <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center">
+                         <Globe size={32} className="text-brand-secondary" />
+                      </div>
+                      <h3 className="text-4xl font-ubuntu font-bold">Configuración de Portal Externo</h3>
+                      <p className="text-xl text-white/60 leading-relaxed font-medium">
+                        Este es el enlace profesional para {activeClinic?.name}. Cópialo y pégalo en tu biografía de Instagram o estados de WhatsApp.
+                      </p>
+                      
+                      <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] space-y-4">
+                         <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex-1 bg-brand-navy/60 p-5 rounded-2xl border border-white/10 font-mono text-sm flex items-center gap-3 truncate text-brand-secondary font-bold">
+                               <Globe size={14} /> {portalFullUrl}
+                            </div>
+                            <button onClick={copyPortalLink} className="bg-white text-brand-navy px-8 py-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-3 hover:bg-brand-secondary hover:text-white transition-all">
+                               <Copy size={16} /> Copiar Enlace
+                            </button>
+                         </div>
+                      </div>
+                   </div>
+                   <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-brand-secondary/20 rounded-full blur-3xl"></div>
+                </div>
+             </div>
+           )
+        )}
 
-      {/* VISTA TENANTS PARA SUPER ADMINS */}
-      {isSuperAdmin && activeSubTab === 'tenants' && !editingClinicId && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
-           {companies.map(c => (
-             <div key={c.id} className="bg-white rounded-[3.5rem] border-b-8 shadow-sm overflow-hidden flex flex-col group hover:shadow-2xl transition-all relative" style={{ borderBottomColor: c.primaryColor }}>
-               <div className="h-28 bg-slate-50 relative overflow-hidden">
-                 <img src={c.portalHero || "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000"} className="w-full h-full object-cover opacity-20" />
-                 <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-2xl bg-white shadow-xl p-2 flex items-center justify-center border border-slate-100">
-                      <img src={c.logo || "https://placeholder.com/150"} className="w-full h-full object-contain" />
-                    </div>
+        {/* VISTA TENANTS (SÓLO SUPER ADMIN) */}
+        {isSuperAdmin && activeSubTab === 'tenants' && !editingClinicId && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
+             {companies.map(c => (
+               <div key={c.id} className="bg-white rounded-[3.5rem] border-b-8 shadow-sm overflow-hidden flex flex-col group hover:shadow-2xl transition-all relative" style={{ borderBottomColor: c.primaryColor }}>
+                 <div className="h-28 bg-slate-50 relative overflow-hidden">
+                   <img src={c.portalHero || "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000"} className="w-full h-full object-cover opacity-20" />
+                   <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-2xl bg-white shadow-xl p-2 flex items-center justify-center border border-slate-100">
+                        <img src={c.logo || "https://placeholder.com/150"} className="w-full h-full object-contain" />
+                      </div>
+                   </div>
+                 </div>
+                 <div className="p-8 text-center">
+                   <h4 className="text-2xl font-ubuntu font-bold text-brand-navy">{c.name}</h4>
+                   <button 
+                     onClick={() => setEditingClinicId(c.id)} 
+                     className="w-full mt-8 py-4 bg-brand-navy text-white rounded-[1.5rem] font-bold text-[11px] uppercase tracking-widest hover:bg-brand-secondary transition-all"
+                   >
+                     Gestionar Marca <ChevronRight size={16} />
+                   </button>
                  </div>
                </div>
-               <div className="p-8 text-center">
-                 <h4 className="text-2xl font-ubuntu font-bold text-brand-navy">{c.name}</h4>
-                 <button 
-                   onClick={() => setEditingClinicId(c.id)} 
-                   className="w-full mt-8 py-4 bg-brand-navy text-white rounded-[1.5rem] font-bold text-[11px] uppercase tracking-widest hover:bg-brand-secondary transition-all"
-                 >
-                   Gestionar Marca <ChevronRight size={16} />
-                 </button>
-               </div>
-             </div>
-           ))}
-        </div>
-      )}
+             ))}
+          </div>
+        )}
 
-      {/* VISTA DETALLE PARA SUPER ADMINS EDITANDO UNA CLÍNICA */}
-      {editingClinicId && (
-        <div className="px-4">
-          {clinicDetailTab === 'brand' && renderBrandingForm()}
-          {clinicDetailTab === 'portal' && (
-            <div className="max-w-4xl mx-auto space-y-10">
-               <div className="bg-brand-navy rounded-[4rem] p-16 text-white relative overflow-hidden shadow-2xl border border-white/5">
-                  <div className="relative z-10 max-w-2xl space-y-8">
-                     <h3 className="text-4xl font-ubuntu font-bold">Portal de Agenda Virtual</h3>
-                     <p className="text-xl text-white/60 leading-relaxed font-medium">Este es el enlace que debes compartir con tus pacientes para que agenden solos.</p>
-                     
-                     <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] space-y-4">
-                        <div className="flex flex-col sm:flex-row gap-4">
-                           <div className="flex-1 bg-brand-navy/60 p-5 rounded-2xl border border-white/10 font-mono text-xs flex items-center gap-3 truncate">
-                              <Globe size={14} className="text-brand-secondary" /> bee-clinical.system/portal/{activeClinic?.id}
-                           </div>
-                           <button onClick={copyPortalLink} className="bg-white text-brand-navy px-8 py-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-3">
-                              <Copy size={16} /> Copiar
-                           </button>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            </div>
-          )}
-        </div>
-      )}
+        {/* VISTA DETALLE PARA SUPER ADMINS EDITANDO UNA CLÍNICA ESPECÍFICA */}
+        {editingClinicId && (
+          <div className="animate-fade-in">
+            {clinicDetailTab === 'brand' ? renderBrandingForm() : (
+              <div className="max-w-4xl mx-auto space-y-10">
+                 <div className="bg-brand-navy rounded-[4rem] p-16 text-white relative overflow-hidden shadow-2xl border border-white/5">
+                    <div className="relative z-10 max-w-2xl space-y-8">
+                       <h3 className="text-4xl font-ubuntu font-bold">Configuración de Portal Externo</h3>
+                       <p className="text-xl text-white/60 leading-relaxed font-medium">Link de acceso para {activeClinic?.name}.</p>
+                       <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] space-y-4">
+                          <div className="flex flex-col sm:flex-row gap-4">
+                             <div className="flex-1 bg-brand-navy/60 p-5 rounded-2xl border border-white/10 font-mono text-sm flex items-center gap-3 truncate text-brand-secondary font-bold">
+                                <Globe size={14} /> {portalFullUrl}
+                             </div>
+                             <button onClick={copyPortalLink} className="bg-white text-brand-navy px-8 py-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-3 hover:bg-brand-secondary hover:text-white transition-all">
+                                <Copy size={16} /> Copiar
+                             </button>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
