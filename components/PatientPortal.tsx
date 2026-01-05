@@ -2,17 +2,14 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Calendar, 
-  Clock, 
   MapPin, 
   ArrowLeft,
   Phone,
   User as UserIcon,
   MessageCircle,
-  Building,
   ArrowRight,
   IdCard,
   Navigation,
-  ChevronRight,
   CheckCircle2,
   Loader2,
   CalendarCheck,
@@ -74,6 +71,8 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
       const message = `Hola! Reservé una cita en ${company.name}:\n\n👤 *Nombre:* ${booking.patientName}\n📍 *Sede:* ${booking.sede?.name}\n📅 *Fecha:* ${booking.date}\n⏰ *Hora:* ${booking.time}\n\nEspero confirmación!`;
       const waUrl = `https://wa.me/${clinicWhatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
       window.open(waUrl, '_blank');
+      // No regresamos al login automáticamente para permitir que el usuario vea su acción finalizada si fuera necesario, 
+      // pero aquí cumplimos con el flujo de "onBack" si se requiere.
       onBack();
     }
     setIsSubmitting(false);
@@ -88,46 +87,46 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-inter overflow-x-hidden text-brand-navy">
-      {/* Header Fijo */}
-      <nav className="bg-white/95 backdrop-blur-md border-b border-slate-100 px-5 md:px-12 py-4 flex items-center justify-between sticky top-0 z-[100] shadow-sm">
+      {/* Header Fijo Minimalista (Sin botón Salir) */}
+      <nav className="bg-white/95 backdrop-blur-md border-b border-slate-100 px-6 py-4 flex items-center justify-center sticky top-0 z-[100] shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center overflow-hidden border border-slate-100 shadow-sm transition-transform active:scale-95">
             <img src={company.logo} alt="Logo" className="w-full h-full object-contain p-1.5" />
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col items-center sm:items-start">
             <span className="font-ubuntu font-bold text-brand-navy text-lg leading-none tracking-tight">{company.name}</span>
-            <span className="text-[9px] uppercase tracking-[0.1em] font-bold text-slate-400 mt-0.5">Citas Online</span>
+            <span className="text-[9px] uppercase tracking-[0.1em] font-bold text-slate-400 mt-0.5 text-center sm:text-left">Citas Online</span>
           </div>
         </div>
-        <button 
-          onClick={onBack} 
-          className="text-slate-400 font-bold text-[9px] flex items-center gap-1.5 uppercase tracking-widest bg-slate-50 border border-slate-100 px-4 py-2 rounded-xl active:bg-slate-100 transition-all"
-        >
-          <ArrowLeft size={12} /> Salir
-        </button>
       </nav>
 
       <main className="flex-1 flex flex-col items-center">
-        {/* Hero Section Centrado */}
-        <div className="w-full h-[340px] md:h-[450px] relative overflow-hidden flex items-center justify-center bg-brand-navy">
-           <img 
-            src={company.portalHero} 
-            className="w-full h-full object-cover opacity-30 scale-105" 
-            alt="Clinic Hero" 
-           />
-           <div className="absolute inset-0 bg-gradient-to-b from-brand-navy/40 via-brand-navy/60 to-[#F8FAFC]"></div>
+        {/* Hero Section - Centrado Total con Fondo Dark Premium */}
+        <div className="w-full h-[360px] md:h-[480px] relative overflow-hidden flex items-center justify-center bg-[#0D0D33]">
+           <div className="absolute inset-0 bg-gradient-to-b from-[#0D0D33]/60 via-[#0D0D33]/80 to-[#F8FAFC]"></div>
+           
            <div className="relative z-10 text-center px-6 max-w-2xl animate-fade-in flex flex-col items-center">
-              <h1 className="text-white text-4xl md:text-7xl font-ubuntu font-bold tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] text-balance leading-[1.15]">
+              <div className="w-16 h-16 bg-brand-primary rounded-2xl flex items-center justify-center shadow-2xl mb-8 border border-white/10 animate-pulse">
+                <Zap className="text-white fill-white" size={32} />
+              </div>
+              
+              <h1 className="text-white text-4xl md:text-7xl font-ubuntu font-bold tracking-tight drop-shadow-2xl text-balance leading-[1.1]">
                 Cuidado experto <br/> para tus <span className="text-brand-primary italic">pies</span>
               </h1>
-              <p className="text-white/90 font-medium text-base md:text-2xl mt-6 max-w-md mx-auto leading-relaxed drop-shadow-md">
+              
+              <p className="text-slate-300 font-medium text-base md:text-2xl mt-8 max-w-md mx-auto leading-relaxed drop-shadow-lg">
                 Agenda tu atención profesional hoy mismo desde tu celular.
               </p>
+
+              <div className="mt-6 flex items-center gap-2 px-4 py-2 bg-white/5 backdrop-blur-md rounded-full border border-white/10">
+                <div className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse"></div>
+                <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">Servidor de Agendamiento Activo</span>
+              </div>
            </div>
         </div>
 
-        {/* Contenido Principal */}
-        <div className="max-w-4xl w-full -mt-14 relative z-20 px-4 pb-20">
+        {/* Flujo Principal */}
+        <div className="max-w-4xl w-full -mt-16 relative z-20 px-4 pb-24">
             
             {/* Indicador de Progreso */}
             <div className="flex items-center justify-between gap-2 mb-8 overflow-x-auto no-scrollbar py-5 bg-white/95 backdrop-blur-md rounded-[2.5rem] px-8 shadow-[0_20px_40px_rgba(0,0,0,0.06)] border border-white">
@@ -153,7 +152,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
             </div>
 
             {/* Tarjeta de Formulario */}
-            <div className="bg-white rounded-[3rem] shadow-[0_40px_80px_rgba(0,0,0,0.07)] border border-slate-50 overflow-hidden flex flex-col min-h-[520px]">
+            <div className="bg-white rounded-[3rem] shadow-[0_40px_80px_rgba(0,0,0,0.08)] border border-slate-50 overflow-hidden flex flex-col min-h-[550px]">
                 
                 {/* Paso 1: Sedes */}
                 {step === 'sede' && (
@@ -185,16 +184,16 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                                     <h4 className="font-ubuntu font-bold text-xl group-hover:text-brand-primary transition-colors mb-2">{s.name}</h4>
                                     <p className="text-[13px] text-slate-500 font-medium leading-relaxed">{s.address}</p>
                                     <div className="mt-5 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 w-fit px-3 py-1.5 rounded-lg">
-                                        <Phone size={12} className="text-brand-primary" /> {s.phone || 'Disponible'}
+                                        <Phone size={12} className="text-brand-primary" /> Disponible
                                     </div>
                                   </div>
 
                                   <button 
                                     onClick={() => { setBooking(prev => ({...prev, sede: s})); setStep('info'); }}
-                                    className="mt-8 w-full py-4.5 rounded-2xl text-white font-bold text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                                    className="mt-8 w-full py-5 rounded-[1.5rem] text-white font-bold text-[11px] uppercase tracking-[0.2em] shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3 hover:brightness-110"
                                     style={{ backgroundColor: primaryColor }}
                                   >
-                                    Seleccionar Sede <ArrowRight size={14} />
+                                    Seleccionar Sede <ArrowRight size={16} />
                                   </button>
                               </div>
                             </div>
@@ -220,7 +219,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                               type="text" 
                               value={booking.patientName} 
                               onChange={(e) => setBooking(prev => ({...prev, patientName: e.target.value}))} 
-                              className="w-full px-6 py-4.5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
+                              className="w-full px-6 py-5 bg-slate-50 border-none rounded-[1.25rem] focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
                               style={{ '--tw-ring-color': primaryColor } as any} 
                               placeholder="Ej: Juan Pérez" 
                             />
@@ -232,7 +231,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                                 <Phone size={12} style={{ color: primaryColor }} /> WhatsApp <span className="text-red-400">*</span>
                               </label>
                               <div className="flex gap-2">
-                                <div className="bg-slate-50 px-4 py-4.5 rounded-2xl font-bold text-slate-400 shadow-inner flex items-center text-sm">+51</div>
+                                <div className="bg-slate-50 px-4 py-5 rounded-[1.25rem] font-bold text-slate-400 shadow-inner flex items-center text-sm">+51</div>
                                 <input 
                                   type="tel" 
                                   value={booking.patientPhone} 
@@ -240,7 +239,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                                     const val = e.target.value.replace(/\D/g, '').slice(0, 9);
                                     setBooking(prev => ({...prev, patientPhone: val}));
                                   }} 
-                                  className={`flex-1 px-6 py-4.5 bg-slate-50 border-2 rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all ${
+                                  className={`flex-1 px-6 py-5 bg-slate-50 border-2 rounded-[1.25rem] focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all ${
                                     booking.patientPhone.length > 0 && !isPhoneValid ? 'border-red-200' : 'border-transparent'
                                   }`} 
                                   style={{ '--tw-ring-color': primaryColor } as any} 
@@ -261,7 +260,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                                 type="text" 
                                 value={booking.patientDni} 
                                 onChange={(e) => setBooking(prev => ({...prev, patientDni: e.target.value.replace(/\D/g, '').slice(0, 12)}))} 
-                                className="w-full px-6 py-4.5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
+                                className="w-full px-6 py-5 bg-slate-50 border-none rounded-[1.25rem] focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
                                 style={{ '--tw-ring-color': primaryColor } as any} 
                                 placeholder="DNI del paciente" 
                               />
@@ -272,16 +271,16 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                           <button 
                             disabled={!isInfoStepComplete} 
                             onClick={() => setStep('schedule')} 
-                            className="w-full py-5 text-white rounded-[1.75rem] font-bold text-base shadow-xl transition-all active:scale-95 disabled:opacity-30 disabled:grayscale flex items-center justify-center gap-3" 
+                            className="w-full py-6 text-white rounded-[2rem] font-bold text-[13px] uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 disabled:opacity-30 disabled:grayscale flex items-center justify-center gap-3 hover:brightness-110" 
                             style={{ backgroundColor: primaryColor }}
                           >
-                            Ver Horarios Disponibles <ArrowRight size={18} />
+                            Ver Disponibilidad <ArrowRight size={20} />
                           </button>
                         </div>
                         
                         <button 
                           onClick={() => setStep('sede')} 
-                          className="w-full text-slate-300 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:text-brand-navy transition-colors mt-4"
+                          className="w-full text-slate-300 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:text-brand-navy transition-colors mt-6"
                         >
                           <ArrowLeft size={12} /> Regresar a Sedes
                         </button>
@@ -305,7 +304,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                           min={new Date().toISOString().split('T')[0]} 
                           value={booking.date} 
                           onChange={(e) => setBooking(prev => ({...prev, date: e.target.value}))} 
-                          className="w-full pl-16 pr-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none text-base shadow-inner appearance-none transition-all" 
+                          className="w-full pl-16 pr-6 py-5 bg-slate-50 border-none rounded-[1.25rem] focus:ring-2 font-bold text-brand-navy outline-none text-base shadow-inner appearance-none transition-all" 
                           style={{ '--tw-ring-color': primaryColor } as any} 
                         />
                       </div>
@@ -315,7 +314,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                               <button 
                                 key={t} 
                                 onClick={() => setBooking(prev => ({...prev, time: t}))} 
-                                className={`py-4.5 rounded-2xl font-ubuntu font-bold text-base border-2 transition-all duration-300 active:scale-95 ${booking.time === t ? 'text-white shadow-xl' : 'bg-white text-slate-400 border-slate-50 hover:border-brand-primary/30'}`} 
+                                className={`py-5 rounded-[1.25rem] font-ubuntu font-bold text-base border-2 transition-all duration-300 active:scale-95 ${booking.time === t ? 'text-white shadow-xl' : 'bg-white text-slate-400 border-slate-50 hover:border-brand-primary/30'}`} 
                                 style={{ 
                                   backgroundColor: booking.time === t ? primaryColor : undefined, 
                                   borderColor: booking.time === t ? primaryColor : undefined 
@@ -330,10 +329,10 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                         <button 
                           disabled={!booking.time} 
                           onClick={() => setStep('confirm')} 
-                          className="w-full py-5 text-white rounded-[1.75rem] font-bold text-base shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3" 
+                          className="w-full py-6 text-white rounded-[2rem] font-bold text-[13px] uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3 hover:brightness-110" 
                           style={{ backgroundColor: primaryColor }}
                         >
-                          Confirmar Selección <ArrowRight size={18} />
+                          Confirmar Selección <ArrowRight size={20} />
                         </button>
                         <button onClick={() => setStep('info')} className="mt-6 text-slate-300 font-bold text-[10px] uppercase tracking-widest hover:text-brand-navy transition-all">Modificar mis datos</button>
                       </div>
@@ -388,7 +387,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                       <button 
                         disabled={isSubmitting} 
                         onClick={handleConfirmBooking} 
-                        className="w-full py-6 text-white rounded-[2rem] font-bold text-lg shadow-[0_20px_50px_-10px_rgba(34,197,94,0.4)] flex items-center justify-center gap-4 transition-all active:scale-95 disabled:opacity-50" 
+                        className="w-full py-6 text-white rounded-[2rem] font-bold text-lg shadow-[0_20px_50px_-10px_rgba(34,197,94,0.4)] flex items-center justify-center gap-4 transition-all active:scale-95 disabled:opacity-50 hover:brightness-110" 
                         style={{ backgroundColor: '#22C55E' }}
                       >
                           {isSubmitting ? (
@@ -405,24 +404,23 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                 )}
             </div>
 
-            {/* Créditos */}
-            <div className="mt-14 text-center animate-fade-in">
+            {/* Créditos Refinados */}
+            <div className="mt-16 text-center animate-fade-in">
               <div className="inline-flex flex-col items-center gap-4">
                 <p className="text-slate-300 text-[10px] font-bold uppercase tracking-[0.4em] mb-1">Healthcare Management Ecosystem</p>
                 <a 
                   href="https://gaorsystem.vercel.app/" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-4 bg-white px-8 py-4 rounded-[2.25rem] shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-slate-100 hover:shadow-xl transition-all hover:-translate-y-1"
+                  className="group flex items-center gap-5 bg-white px-10 py-5 rounded-[2.5rem] shadow-[0_15px_35px_rgba(0,0,0,0.04)] border border-slate-100 hover:shadow-2xl transition-all hover:-translate-y-1"
                 >
-                  <div className="w-11 h-11 bg-brand-navy rounded-xl flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
-                     <Zap className="text-brand-primary fill-brand-primary" size={24} />
+                  <div className="w-12 h-12 bg-[#0D0D33] rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                     <Zap className="text-brand-primary fill-brand-primary" size={26} />
                   </div>
                   <div className="text-left">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Desarrollado por</p>
-                    <p className="text-base font-ubuntu font-bold text-brand-navy group-hover:text-brand-purple transition-colors">Gaor<span className="text-brand-purple">System</span></p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Desarrollado con excelencia por</p>
+                    <p className="text-lg font-ubuntu font-bold text-[#0D0D33] group-hover:text-brand-purple transition-colors">Gaor<span className="text-brand-purple">System</span></p>
                   </div>
-                  <ChevronRight size={18} className="text-slate-200 group-hover:text-brand-purple group-hover:translate-x-1 transition-all" />
                 </a>
               </div>
             </div>
