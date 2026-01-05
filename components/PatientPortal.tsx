@@ -17,7 +17,8 @@ import {
   ExternalLink,
   CheckCircle2,
   Loader2,
-  CalendarCheck
+  CalendarCheck,
+  Zap
 } from 'lucide-react';
 import { Sede, Company } from '../types';
 
@@ -76,135 +77,116 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
   const currentIdx = steps.indexOf(step);
 
   return (
-    <div className="min-h-screen bg-[#FDFDFF] flex flex-col font-inter overflow-x-hidden text-brand-navy">
-      {/* Navbar Minimalista */}
-      <nav className="bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 md:px-12 py-5 flex items-center justify-between sticky top-0 z-[100] shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center overflow-hidden border border-slate-100 shadow-sm transition-transform hover:scale-105">
-            <img src={company.logo} alt="Logo" className="w-full h-full object-contain p-2" />
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-inter overflow-x-hidden text-brand-navy">
+      {/* Header Fijo con Blur - Mobile Ready */}
+      <nav className="bg-white/90 backdrop-blur-md border-b border-slate-100 px-5 md:px-12 py-4 flex items-center justify-between sticky top-0 z-[100] shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center overflow-hidden border border-slate-100 shadow-sm transition-transform active:scale-95">
+            <img src={company.logo} alt="Logo" className="w-full h-full object-contain p-1.5" />
           </div>
           <div className="flex flex-col">
-            <span className="font-ubuntu font-bold text-brand-navy text-xl leading-none tracking-tight">{company.name}</span>
-            <div className="flex items-center gap-1.5 mt-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse"></div>
-              <span className="text-[10px] uppercase tracking-[0.1em] font-bold text-slate-400">Portal de Agendamiento</span>
-            </div>
+            <span className="font-ubuntu font-bold text-brand-navy text-lg leading-none tracking-tight">{company.name}</span>
+            <span className="text-[9px] uppercase tracking-[0.1em] font-bold text-slate-400 mt-0.5">Citas Online</span>
           </div>
         </div>
         <button 
           onClick={onBack} 
-          className="text-slate-400 font-bold text-[10px] flex items-center gap-2 uppercase tracking-widest border border-slate-100 px-5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-brand-navy transition-all"
+          className="text-slate-400 font-bold text-[9px] flex items-center gap-1.5 uppercase tracking-widest bg-slate-50 border border-slate-100 px-4 py-2 rounded-xl active:bg-slate-100 transition-all"
         >
-          <ArrowLeft size={14} /> Salir
+          <ArrowLeft size={12} /> Salir
         </button>
       </nav>
 
       <main className="flex-1 flex flex-col items-center">
-        {/* Hero Banner Rediseñado */}
-        <div className="w-full h-[320px] md:h-[400px] relative overflow-hidden flex items-center justify-center bg-brand-navy">
+        {/* Hero Section - Ajustada para mejor lectura en móvil */}
+        <div className="w-full h-[280px] md:h-[350px] relative overflow-hidden flex items-center justify-center bg-brand-navy">
            <img 
             src={company.portalHero} 
-            className="w-full h-full object-cover opacity-60 scale-105" 
-            alt="Hero Background" 
+            className="w-full h-full object-cover opacity-50 scale-105" 
+            alt="Clinic Hero" 
            />
-           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand-navy/30 to-[#FDFDFF]"></div>
+           <div className="absolute inset-0 bg-gradient-to-b from-brand-navy/20 via-brand-navy/40 to-[#F8FAFC]"></div>
            <div className="relative z-10 text-center px-6 max-w-2xl animate-fade-in">
-              <h1 className="text-white text-5xl md:text-7xl font-ubuntu font-bold tracking-tight drop-shadow-2xl">
+              <h1 className="text-white text-4xl md:text-6xl font-ubuntu font-bold tracking-tight drop-shadow-xl">
                 Cuidado experto <br/> para tus <span className="text-brand-primary italic">pies</span>
               </h1>
-              <p className="text-white/80 font-medium text-lg mt-6 max-w-lg mx-auto">
-                Agenda tu cita profesional en menos de 2 minutos con los mejores especialistas.
+              <p className="text-white/80 font-medium text-sm md:text-lg mt-4 max-w-lg mx-auto leading-relaxed">
+                Agenda tu atención profesional hoy mismo desde tu celular.
               </p>
            </div>
         </div>
 
-        {/* Contenedor de Flujo Principal */}
-        <div className="max-w-5xl w-full -mt-24 relative z-20 px-4 pb-24">
+        {/* Flujo Principal - Contenedor Centrado */}
+        <div className="max-w-4xl w-full -mt-16 relative z-20 px-4 pb-20">
             
-            {/* Indicador de Progreso Odoo Style */}
-            <div className="flex items-center justify-center gap-3 mb-12 overflow-x-auto no-scrollbar py-6 bg-white/90 backdrop-blur-md rounded-[2.5rem] px-10 shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-white/50">
+            {/* Indicador de Progreso Odoo Style - Scrollable en móvil */}
+            <div className="flex items-center justify-between gap-2 mb-8 overflow-x-auto no-scrollbar py-5 bg-white/95 backdrop-blur-md rounded-[2rem] px-6 shadow-[0_15px_35px_rgba(0,0,0,0.05)] border border-white">
             {steps.map((s, idx) => (
-                <div key={s} className="flex items-center flex-shrink-0">
-                  <div 
-                    className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                      idx < currentIdx ? 'bg-green-100 text-brand-primary' : 
-                      idx === currentIdx ? 'text-white shadow-xl scale-110 ring-4 ring-brand-primary/10' : 
-                      'bg-slate-50 text-slate-300'
-                    }`} 
-                    style={{ backgroundColor: idx === currentIdx ? primaryColor : undefined }}
-                  >
-                    {idx < currentIdx ? <CheckCircle2 size={20} /> : idx + 1}
-                  </div>
-                  {idx < steps.length - 1 && (
-                    <div className={`w-8 h-[2px] mx-3 rounded-full transition-all duration-500 ${idx < currentIdx ? 'opacity-100' : 'bg-slate-100'}`} style={{ backgroundColor: idx < currentIdx ? primaryColor : undefined }} />
-                  )}
-                </div>
+                <React.Fragment key={s}>
+                    <div className="flex flex-col items-center gap-1.5 shrink-0">
+                        <div 
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${
+                            idx < currentIdx ? 'bg-green-100 text-brand-primary' : 
+                            idx === currentIdx ? 'text-white shadow-lg scale-110 ring-4 ring-brand-primary/10' : 
+                            'bg-slate-100 text-slate-300'
+                            }`} 
+                            style={{ backgroundColor: idx === currentIdx ? primaryColor : undefined }}
+                        >
+                            {idx < currentIdx ? <CheckCircle2 size={16} /> : idx + 1}
+                        </div>
+                    </div>
+                    {idx < steps.length - 1 && (
+                        <div className={`flex-1 min-w-[15px] h-[2px] rounded-full transition-all duration-500 ${idx < currentIdx ? 'opacity-100' : 'bg-slate-100'}`} style={{ backgroundColor: idx < currentIdx ? primaryColor : undefined }} />
+                    )}
+                </React.Fragment>
             ))}
             </div>
 
-            {/* Card de Contenido Dinámico */}
-            <div className="bg-white rounded-[3.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.08)] border border-slate-50 overflow-hidden min-h-[600px] flex flex-col">
+            {/* Card de Contenido con estilo Odoo */}
+            <div className="bg-white rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.05)] border border-slate-50 overflow-hidden flex flex-col min-h-[500px]">
                 
+                {/* Paso 1: Sedes */}
                 {step === 'sede' && (
-                  <div className="p-10 md:p-16 space-y-12 animate-fade-in flex-1 flex flex-col">
-                      <div className="text-center max-w-2xl mx-auto">
-                        <h2 className="text-4xl font-ubuntu font-bold text-brand-navy">Selecciona una Sede</h2>
-                        <p className="text-slate-400 font-medium mt-3">Elige el centro médico más conveniente para tu atención.</p>
+                  <div className="p-8 md:p-14 space-y-10 animate-fade-in flex-1">
+                      <div className="text-center">
+                        <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">¿Dónde te atenderás?</h2>
+                        <p className="text-slate-400 text-sm font-medium mt-2">Selecciona la sede más cercana a ti.</p>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {sedes.map(s => (
                             <div key={s.id} className="group relative">
-                              <div className="w-full p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:border-brand-primary/20 transition-all text-left flex flex-col h-full relative overflow-hidden">
-                                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 shadow-inner transition-transform group-hover:scale-110 group-hover:rotate-3" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
-                                    <MapPin size={32} />
-                                  </div>
-                                  
-                                  <div className="flex-1 space-y-5">
-                                    <h4 className="font-ubuntu font-bold text-2xl group-hover:text-brand-primary transition-colors">{s.name}</h4>
-                                    
-                                    <div className="space-y-4">
-                                      <div className="flex items-start gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-brand-primary shrink-0 mt-0.5">
-                                          <Navigation size={16} />
-                                        </div>
-                                        <div className="flex-1">
-                                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Dirección Exacta</p>
-                                          <p className="text-sm font-medium text-slate-600 leading-relaxed">{s.address}</p>
-                                        </div>
-                                      </div>
-
-                                      <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-brand-primary shrink-0">
-                                          <Phone size={16} />
-                                        </div>
-                                        <div className="flex-1">
-                                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Contacto Directo</p>
-                                          <p className="text-sm font-bold text-slate-700">{s.phone || 'Central de Citas'}</p>
-                                        </div>
-                                      </div>
+                              <div className="w-full p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-brand-primary/20 transition-all text-left flex flex-col h-full overflow-hidden">
+                                  <div className="flex items-start justify-between mb-6">
+                                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
+                                        <MapPin size={24} />
                                     </div>
-                                  </div>
-
-                                  <div className="mt-10 pt-8 border-t border-slate-50 flex items-center justify-between w-full">
-                                    <button 
-                                      onClick={() => { setBooking(prev => ({...prev, sede: s})); setStep('service'); }}
-                                      className="px-10 py-4 rounded-2xl text-white font-bold text-xs uppercase tracking-widest shadow-xl transition-all hover:scale-105 active:scale-95 flex items-center gap-3"
-                                      style={{ backgroundColor: primaryColor }}
-                                    >
-                                      Elegir Sede <ArrowRight size={14} />
-                                    </button>
-                                    
                                     <a 
                                       href={getMapsUrl(s.address)} 
                                       target="_blank" 
                                       rel="noopener noreferrer"
-                                      className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-brand-primary hover:text-white transition-all shadow-sm border border-slate-100 group/map"
-                                      title="Cómo llegar"
+                                      className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:bg-brand-primary hover:text-white transition-all border border-slate-100"
+                                      title="Google Maps"
                                     >
-                                      <ExternalLink size={20} className="group-hover/map:rotate-12 transition-transform" />
+                                      <Navigation size={18} />
                                     </a>
                                   </div>
+                                  
+                                  <div className="flex-1">
+                                    <h4 className="font-ubuntu font-bold text-xl group-hover:text-brand-primary transition-colors mb-2">{s.name}</h4>
+                                    <p className="text-xs text-slate-500 font-medium leading-relaxed">{s.address}</p>
+                                    <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        <Phone size={12} className="text-brand-primary" /> {s.phone || 'Sede Central'}
+                                    </div>
+                                  </div>
+
+                                  <button 
+                                    onClick={() => { setBooking(prev => ({...prev, sede: s})); setStep('service'); }}
+                                    className="mt-8 w-full py-4 rounded-2xl text-white font-bold text-xs uppercase tracking-widest shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+                                    style={{ backgroundColor: primaryColor }}
+                                  >
+                                    Seleccionar <ArrowRight size={14} />
+                                  </button>
                               </div>
                             </div>
                         ))}
@@ -212,139 +194,138 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
 
                       {sedes.length === 0 && (
                         <div className="py-20 text-center flex flex-col items-center">
-                           <Loader2 className="animate-spin text-brand-primary mb-6" size={48} />
-                           <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Sincronizando centros disponibles...</p>
+                           <Loader2 className="animate-spin text-brand-primary mb-4" size={40} />
+                           <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Cargando centros de atención...</p>
                         </div>
                       )}
                   </div>
                 )}
 
+                {/* Paso 2: Servicio */}
                 {step === 'service' && (
-                  <div className="p-10 md:p-16 space-y-12 animate-fade-in max-w-2xl mx-auto w-full flex-1 flex flex-col justify-center items-center">
+                  <div className="p-8 md:p-14 space-y-10 animate-fade-in max-w-2xl mx-auto w-full flex-1 flex flex-col justify-center items-center">
                     <div className="text-center">
-                      <h2 className="text-4xl font-ubuntu font-bold text-brand-navy">Servicio Especializado</h2>
-                      <p className="text-slate-400 font-medium mt-3">Ofrecemos los mejores tratamientos para tu salud podológica.</p>
+                      <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Servicio Especializado</h2>
+                      <p className="text-slate-400 text-sm font-medium mt-2">Atención podológica clínica integral.</p>
                     </div>
 
                     <button 
                       onClick={() => setStep('info')} 
-                      className="w-full p-10 bg-white rounded-[3rem] border border-slate-100 shadow-xl transition-all text-left flex items-center gap-8 group hover:scale-[1.02] active:scale-95 border-l-8 border-l-brand-primary"
+                      className="w-full p-8 bg-white rounded-3xl border border-slate-100 shadow-xl transition-all text-left flex items-center gap-6 group active:scale-95 border-l-[6px]"
+                      style={{ borderLeftColor: primaryColor }}
                     >
-                        <div className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-inner shrink-0 group-hover:rotate-6 transition-transform" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
-                          <Building size={40} />
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner shrink-0 group-hover:rotate-6 transition-transform" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
+                          <Building size={32} />
                         </div>
                         <div className="flex-1">
-                            <h4 className="font-ubuntu font-bold text-brand-navy text-2xl">Podología Clínica Integral</h4>
-                            <p className="text-slate-500 text-sm font-medium mt-2 leading-relaxed">
-                                Evaluación completa, profilaxis, tratamiento de onicocriptosis y cuidados especializados.
-                            </p>
-                            <div className="flex items-center gap-2 mt-4 text-brand-primary font-bold text-[10px] uppercase tracking-widest">
-                                <Clock size={12} /> Duración aprox: 45 min
-                            </div>
+                            <h4 className="font-ubuntu font-bold text-brand-navy text-xl">Podología Integral</h4>
+                            <p className="text-slate-500 text-xs font-medium mt-1 leading-relaxed">Profilaxis clínica, diagnóstico y tratamiento podológico completo.</p>
                         </div>
-                        <ChevronRight className="text-slate-200 group-hover:text-brand-primary group-hover:translate-x-1 transition-all" size={32} />
+                        <ChevronRight className="text-slate-200 group-hover:text-brand-primary group-hover:translate-x-1 transition-all" size={24} />
                     </button>
 
-                    <button onClick={() => setStep('sede')} className="text-slate-400 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:text-brand-navy transition-colors">
-                      <ArrowLeft size={14} /> Regresar a sedes
+                    <button onClick={() => setStep('sede')} className="text-slate-300 font-bold text-[9px] uppercase tracking-[0.2em] flex items-center gap-2 hover:text-brand-navy transition-colors mt-6">
+                      <ArrowLeft size={12} /> Regresar a sedes
                     </button>
                   </div>
                 )}
 
+                {/* Paso 3: Datos del Paciente */}
                 {step === 'info' && (
-                  <div className="p-10 md:p-16 space-y-12 animate-fade-in max-w-xl mx-auto w-full flex-1 flex flex-col justify-center">
+                  <div className="p-8 md:p-14 space-y-10 animate-fade-in max-w-xl mx-auto w-full flex-1 flex flex-col justify-center">
                     <div className="text-center">
-                      <h2 className="text-4xl font-ubuntu font-bold text-brand-navy">Tus Datos</h2>
-                      <p className="text-slate-400 font-medium mt-3">Información necesaria para confirmar tu identidad y registro.</p>
+                      <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Tus Datos</h2>
+                      <p className="text-slate-400 text-sm font-medium mt-2">Por favor ingresa tu información personal.</p>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                              <UserIcon size={14} style={{ color: primaryColor }} /> Nombre y Apellidos
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                              <UserIcon size={12} style={{ color: primaryColor }} /> Nombre Completo
                             </label>
                             <input 
                               type="text" 
                               value={booking.patientName} 
                               onChange={(e) => setBooking(prev => ({...prev, patientName: e.target.value}))} 
-                              className="w-full px-8 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-lg placeholder:text-slate-200 transition-all" 
+                              className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
                               style={{ '--tw-ring-color': primaryColor } as any} 
-                              placeholder="Ej: Carlos Silva" 
+                              placeholder="Ej: Juan Pérez" 
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                           <div className="space-y-2">
-                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                <Phone size={14} style={{ color: primaryColor }} /> WhatsApp de Contacto
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                <Phone size={12} style={{ color: primaryColor }} /> WhatsApp
                               </label>
                               <div className="flex gap-2">
-                                <div className="bg-slate-50 px-4 py-5 rounded-2xl font-bold text-slate-400 shadow-inner flex items-center">+51</div>
+                                <div className="bg-slate-50 px-4 py-4 rounded-2xl font-bold text-slate-400 shadow-inner flex items-center text-sm">+51</div>
                                 <input 
                                   type="tel" 
                                   value={booking.patientPhone} 
                                   onChange={(e) => setBooking(prev => ({...prev, patientPhone: e.target.value}))} 
-                                  className="flex-1 px-8 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-lg placeholder:text-slate-200 transition-all" 
+                                  className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
                                   style={{ '--tw-ring-color': primaryColor } as any} 
-                                  placeholder="900000000" 
+                                  placeholder="987654321" 
                                 />
                               </div>
                           </div>
                           <div className="space-y-2">
-                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                <IdCard size={14} style={{ color: primaryColor }} /> DNI / Identificación
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                <IdCard size={12} style={{ color: primaryColor }} /> DNI
                               </label>
                               <input 
                                 type="text" 
                                 value={booking.patientDni} 
                                 onChange={(e) => setBooking(prev => ({...prev, patientDni: e.target.value}))} 
-                                className="w-full px-8 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-lg placeholder:text-slate-200 transition-all" 
+                                className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none shadow-inner text-base placeholder:text-slate-300 transition-all" 
                                 style={{ '--tw-ring-color': primaryColor } as any} 
                                 placeholder="8 dígitos" 
                               />
                           </div>
                         </div>
 
-                        <div className="pt-8">
+                        <div className="pt-6">
                           <button 
                             disabled={!booking.patientName || !booking.patientPhone} 
                             onClick={() => setStep('schedule')} 
-                            className="w-full py-6 text-white rounded-[2.5rem] font-bold text-xl shadow-2xl transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3" 
+                            className="w-full py-5 text-white rounded-[1.5rem] font-bold text-base shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3" 
                             style={{ backgroundColor: primaryColor }}
                           >
-                            Seleccionar Fecha <ArrowRight size={22} />
+                            Continuar <ArrowRight size={18} />
                           </button>
                         </div>
                     </div>
                   </div>
                 )}
 
+                {/* Paso 4: Horario */}
                 {step === 'schedule' && (
-                  <div className="p-10 md:p-16 space-y-12 animate-fade-in max-w-2xl mx-auto w-full text-center flex-1 flex flex-col justify-center">
+                  <div className="p-8 md:p-14 space-y-10 animate-fade-in max-w-2xl mx-auto w-full text-center flex-1 flex flex-col justify-center">
                     <div className="text-center">
-                      <h2 className="text-4xl font-ubuntu font-bold text-brand-navy">Disponibilidad</h2>
-                      <p className="text-slate-400 font-medium mt-3">Selecciona el día y la hora que mejor te acomode.</p>
+                      <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Disponibilidad</h2>
+                      <p className="text-slate-400 text-sm font-medium mt-2">Elige el día y la hora de tu preferencia.</p>
                     </div>
 
-                    <div className="space-y-10">
+                    <div className="space-y-8">
                       <div className="relative max-w-xs mx-auto">
-                        <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-primary" size={24} />
+                        <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-primary" size={20} />
                         <input 
                           type="date" 
                           min={new Date().toISOString().split('T')[0]} 
                           value={booking.date} 
                           onChange={(e) => setBooking(prev => ({...prev, date: e.target.value}))} 
-                          className="w-full pl-16 pr-8 py-6 bg-slate-50 border-none rounded-[2rem] focus:ring-2 font-bold text-brand-navy outline-none text-xl shadow-inner appearance-none transition-all" 
+                          className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-bold text-brand-navy outline-none text-base shadow-inner appearance-none transition-all" 
                           style={{ '--tw-ring-color': primaryColor } as any} 
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                           {['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'].map(t => (
                               <button 
                                 key={t} 
                                 onClick={() => setBooking(prev => ({...prev, time: t}))} 
-                                className={`py-5 rounded-2xl font-ubuntu font-bold text-lg border-2 transition-all duration-300 ${booking.time === t ? 'text-white shadow-xl scale-105' : 'bg-white text-slate-400 border-slate-50 hover:border-brand-primary/40'}`} 
+                                className={`py-4 rounded-xl font-ubuntu font-bold text-base border-2 transition-all duration-300 active:scale-95 ${booking.time === t ? 'text-white shadow-lg' : 'bg-white text-slate-400 border-slate-50 hover:border-brand-primary/20'}`} 
                                 style={{ 
                                   backgroundColor: booking.time === t ? primaryColor : undefined, 
                                   borderColor: booking.time === t ? primaryColor : undefined 
@@ -355,58 +336,59 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                           ))}
                       </div>
 
-                      <div className="pt-8">
+                      <div className="pt-6">
                         <button 
                           disabled={!booking.time} 
                           onClick={() => setStep('confirm')} 
-                          className="w-full py-6 text-white rounded-[2.5rem] font-bold text-xl shadow-2xl transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3" 
+                          className="w-full py-5 text-white rounded-[1.5rem] font-bold text-base shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3" 
                           style={{ backgroundColor: primaryColor }}
                         >
-                          Confirmar mi cita <ArrowRight size={22} />
+                          Confirmar Selección <ArrowRight size={18} />
                         </button>
-                        <button onClick={() => setStep('info')} className="w-full mt-6 text-slate-300 font-bold text-[10px] uppercase tracking-widest hover:text-brand-navy transition-colors">Regresar a mis datos</button>
+                        <button onClick={() => setStep('info')} className="mt-6 text-slate-300 font-bold text-[9px] uppercase tracking-widest hover:text-brand-navy transition-all">Regresar a mis datos</button>
                       </div>
                     </div>
                   </div>
                 )}
 
+                {/* Paso 5: Resumen */}
                 {step === 'confirm' && (
-                  <div className="p-10 md:p-16 space-y-12 animate-fade-in max-w-xl mx-auto w-full flex-1 flex flex-col justify-center">
+                  <div className="p-8 md:p-14 space-y-10 animate-fade-in max-w-xl mx-auto w-full flex-1 flex flex-col justify-center">
                     <div className="text-center">
-                      <h2 className="text-4xl font-ubuntu font-bold text-brand-navy">Confirmación Final</h2>
-                      <p className="text-slate-400 font-medium mt-3">Por favor revisa los detalles antes de agendar.</p>
+                      <h2 className="text-3xl font-ubuntu font-bold text-brand-navy">Confirmación</h2>
+                      <p className="text-slate-400 text-sm font-medium mt-2">Verifica los detalles de tu cita.</p>
                     </div>
 
-                    <div className="bg-slate-50/80 rounded-[3rem] p-10 border border-slate-100 shadow-inner space-y-8">
-                        <div className="flex items-center gap-6 pb-8 border-b border-slate-200">
-                          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-brand-navy shadow-sm border border-slate-100 font-ubuntu font-bold text-3xl">
+                    <div className="bg-slate-50/70 rounded-[2.5rem] p-8 border border-slate-100 shadow-inner space-y-6">
+                        <div className="flex items-center gap-5 pb-6 border-b border-slate-200">
+                          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-brand-navy shadow-sm border border-slate-100 font-ubuntu font-bold text-2xl">
                             {booking.patientName.charAt(0)}
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Paciente registrado</p>
-                            <p className="text-2xl font-ubuntu font-bold text-brand-navy">{booking.patientName}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Paciente</p>
+                            <p className="text-xl font-ubuntu font-bold text-brand-navy">{booking.patientName}</p>
                           </div>
                         </div>
 
-                        <div className="space-y-6">
-                          <div className="flex items-start gap-5">
-                            <div className="w-12 h-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-brand-primary shrink-0 shadow-sm">
-                               <MapPin size={24} />
+                        <div className="space-y-5">
+                          <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-brand-primary border border-slate-100 shadow-sm shrink-0">
+                                <MapPin size={20} />
                             </div>
                             <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Lugar de Atención</p>
-                                <p className="font-bold text-brand-navy text-lg leading-tight">{booking.sede?.name}</p>
-                                <p className="text-xs text-slate-400 mt-1">{booking.sede?.address}</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sede de Atención</p>
+                                <p className="font-bold text-brand-navy text-base leading-tight mt-0.5">{booking.sede?.name}</p>
+                                <p className="text-[10px] text-slate-400 mt-1">{booking.sede?.address}</p>
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-5">
-                            <div className="w-12 h-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-brand-primary shrink-0 shadow-sm">
-                               <CalendarCheck size={24} />
+                          <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-brand-primary border border-slate-100 shadow-sm shrink-0">
+                                <CalendarCheck size={20} />
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fecha y Horario</p>
-                                <p className="font-ubuntu font-bold text-xl" style={{ color: primaryColor }}>{booking.date} — {booking.time}</p>
+                                <p className="font-ubuntu font-bold text-lg mt-0.5" style={{ color: primaryColor }}>{booking.date} — {booking.time}</p>
                             </div>
                           </div>
                         </div>
@@ -416,42 +398,41 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
                       <button 
                         disabled={isSubmitting} 
                         onClick={handleConfirmBooking} 
-                        className="w-full py-8 text-white rounded-[3rem] font-bold text-xl shadow-[0_25px_60px_-15px_rgba(34,197,94,0.4)] flex items-center justify-center gap-4 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50" 
+                        className="w-full py-6 text-white rounded-[2rem] font-bold text-lg shadow-[0_20px_50px_-10px_rgba(34,197,94,0.4)] flex items-center justify-center gap-4 transition-all active:scale-95 disabled:opacity-50" 
                         style={{ backgroundColor: '#22C55E' }}
                       >
                           {isSubmitting ? (
-                            <Loader2 size={28} className="animate-spin" />
+                            <Loader2 size={24} className="animate-spin" />
                           ) : (
-                            <><MessageCircle size={32} /> Confirmar en WhatsApp</>
+                            <><MessageCircle size={28} /> Finalizar en WhatsApp</>
                           )}
                       </button>
-                      
-                      <p className="text-[10px] text-slate-400 font-bold uppercase text-center tracking-widest">
-                         Se abrirá un chat directo con la sede seleccionada.
+                      <p className="text-[9px] text-slate-400 font-bold uppercase text-center tracking-widest leading-relaxed">
+                         Al confirmar se enviará una solicitud directa a la sede para validar disponibilidad.
                       </p>
                     </div>
                   </div>
                 )}
             </div>
 
-            {/* Créditos y Branding Footer */}
-            <div className="mt-16 text-center animate-fade-in">
+            {/* Footer de Marca - Odoo Style */}
+            <div className="mt-12 text-center animate-fade-in">
               <div className="inline-flex flex-col items-center gap-4">
-                <p className="text-slate-300 text-[10px] font-bold uppercase tracking-[0.5em] mb-2">Powered by Healthcare Solutions</p>
+                <p className="text-slate-300 text-[10px] font-bold uppercase tracking-[0.4em] mb-1">Healthcare Management Ecosystem</p>
                 <a 
                   href="https://gaorsystem.vercel.app/" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-5 bg-white px-10 py-5 rounded-[2.5rem] shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-slate-100 hover:shadow-2xl transition-all hover:-translate-y-1"
+                  className="group flex items-center gap-4 bg-white px-8 py-4 rounded-[2rem] shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-slate-100 hover:shadow-xl transition-all hover:-translate-y-1"
                 >
-                  <div className="w-12 h-12 bg-[#FDFDFF] rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
-                    <img src="https://gaorsystem.vercel.app/favicon.ico" alt="Gaor" className="w-8 h-8 grayscale group-hover:grayscale-0 transition-all" />
+                  <div className="w-11 h-11 bg-brand-navy rounded-xl flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                     <Zap className="text-brand-primary fill-brand-primary" size={24} />
                   </div>
                   <div className="text-left">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Desarrollado con excelencia por</p>
-                    <p className="text-lg font-ubuntu font-bold text-brand-navy group-hover:text-brand-purple transition-colors">Gaor<span className="text-brand-purple">System</span></p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Desarrollado con excelencia por</p>
+                    <p className="text-base font-ubuntu font-bold text-brand-navy group-hover:text-brand-purple transition-colors">Gaor<span className="text-brand-purple">System</span></p>
                   </div>
-                  <ChevronRight size={20} className="text-slate-200 group-hover:text-brand-purple group-hover:translate-x-1 transition-all" />
+                  <ChevronRight size={18} className="text-slate-200 group-hover:text-brand-purple group-hover:translate-x-1 transition-all" />
                 </a>
               </div>
             </div>
