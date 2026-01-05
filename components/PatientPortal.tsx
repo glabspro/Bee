@@ -14,7 +14,8 @@ import {
   Stethoscope,
   IdCard,
   Mail,
-  Building
+  Building,
+  Sparkles
 } from 'lucide-react';
 import { Sede, Appointment, AppointmentStatus, Company } from '../types';
 
@@ -40,23 +41,17 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
     time: ''
   });
 
-  const countryCodes = [
-    { code: '+51', country: 'Perú' },
-    { code: '+57', country: 'Colombia' },
-    { code: '+56', country: 'Chile' },
-    { code: '+52', country: 'México' },
-    { code: '+1', country: 'USA' },
-  ];
+  const primaryColor = company.primaryColor || '#714B67';
 
   const handleConfirmBooking = () => {
     const newAppointment: Appointment = {
-      id: 'apt-' + Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       patientName: booking.patientName,
       patientPhone: `${booking.countryCode}${booking.patientPhone}`,
       patientDni: booking.patientDni,
       patientEmail: booking.patientEmail || undefined,
       serviceId: 's1', 
-      sedeId: booking.sede?.id || sedes[0].id,
+      sedeId: booking.sede?.id || sedes[0]?.id || 'default',
       professionalId: 'p1', 
       date: booking.date,
       time: booking.time,
@@ -72,7 +67,7 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
     const waUrl = `https://wa.me/${clinicWhatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
     window.open(waUrl, '_blank');
     
-    alert("¡Cita solicitada! Redirigiendo a WhatsApp...");
+    alert("¡Cita solicitada exitosamente! Estamos redirigiéndote a WhatsApp para finalizar la confirmación.");
     onBack();
   };
 
@@ -81,44 +76,60 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-inter">
+      {/* Navbar Dinámico */}
       <nav className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-100 shadow-sm">
-            {company.logo ? <img src={company.logo} alt="Logo" className="w-full h-full object-cover" /> : <Building className="text-slate-300" />}
+            {company.logo ? (
+              <img src={company.logo} alt="Logo" className="w-full h-full object-contain p-1" />
+            ) : (
+              <Building className="text-slate-300" />
+            )}
           </div>
-          <span className="font-ubuntu font-bold text-brand-navy text-xl">{company.name} <span className="text-[10px] text-brand-secondary uppercase block tracking-widest font-bold">Portal de Pacientes</span></span>
+          <span className="font-ubuntu font-bold text-brand-navy text-xl">
+            {company.name} 
+            <span className="text-[10px] uppercase block tracking-widest font-bold" style={{ color: primaryColor }}>
+              Portal de Pacientes
+            </span>
+          </span>
         </div>
-        <button onClick={onBack} className="text-slate-500 hover:text-brand-primary font-bold text-xs flex items-center gap-2 transition-colors uppercase tracking-widest">
+        <button onClick={onBack} className="text-slate-500 hover:text-brand-navy font-bold text-xs flex items-center gap-2 transition-colors uppercase tracking-widest">
           <ArrowLeft size={16} /> Salir del Portal
         </button>
       </nav>
 
       <main className="flex-1 flex flex-col items-center">
-        {/* Hero Branding */}
-        <div className="w-full h-64 relative overflow-hidden flex items-center justify-center bg-brand-navy">
+        {/* Hero Dinámico */}
+        <div className="w-full h-[400px] relative overflow-hidden flex items-center justify-center bg-brand-navy">
            <img 
-            src={company.portalHero || "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2053&ixlib=rb-4.0.3"} 
-            className="w-full h-full object-cover opacity-40 blur-[2px]" 
-            alt="Hero" 
+            src={company.portalHero || "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2053"} 
+            className="w-full h-full object-cover opacity-60 blur-[1px]" 
+            alt="Hero Background" 
            />
-           <div className="absolute inset-0 bg-gradient-to-t from-slate-50 to-transparent"></div>
-           <div className="relative z-10 text-center space-y-2">
-              <h1 className="text-white text-5xl font-ubuntu font-bold tracking-tight">Cuidamos de ti</h1>
-              <p className="text-white/70 font-medium">Agendamiento inteligente Bee Clinical System</p>
+           <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-slate-50/20 to-transparent"></div>
+           <div className="relative z-10 text-center space-y-4 px-6">
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/30 text-white text-[10px] font-bold uppercase tracking-widest">
+                 <Sparkles size={14} className="text-brand-accent" /> Reserva tu cita hoy
+              </div>
+              <h1 className="text-white text-6xl font-ubuntu font-bold tracking-tight drop-shadow-2xl">Cuidamos de ti</h1>
+              <p className="text-white/90 text-xl font-medium max-w-lg mx-auto">Reserva tu atención de forma rápida y sencilla en nuestra plataforma digital.</p>
            </div>
         </div>
 
-        <div className="max-w-4xl w-full -mt-20 relative z-20 px-6 pb-20">
-            <div className="flex items-center justify-center gap-3 mb-12 overflow-x-auto py-4 bg-white/50 backdrop-blur-md rounded-3xl px-8 shadow-xl border border-white/20">
+        <div className="max-w-4xl w-full -mt-24 relative z-20 px-6 pb-20">
+            {/* Indicador de Pasos */}
+            <div className="flex items-center justify-center gap-3 mb-12 overflow-x-auto py-6 bg-white/70 backdrop-blur-xl rounded-[3rem] px-10 shadow-2xl border border-white/50">
             {steps.map((s, idx) => (
                 <div key={s} className="flex items-center flex-shrink-0">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all ${
-                    idx <= currentIdx ? 'bg-brand-secondary text-white shadow-xl shadow-brand-secondary/30 scale-110' : 'bg-white text-slate-300 border border-slate-100'
-                }`}>
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold transition-all duration-500 ${
+                    idx <= currentIdx 
+                    ? 'text-white shadow-xl scale-110' 
+                    : 'bg-white text-slate-300 border border-slate-100'
+                }`} style={{ backgroundColor: idx <= currentIdx ? primaryColor : undefined }}>
                     {idx + 1}
                 </div>
                 {idx < steps.length - 1 && (
-                    <div className={`w-6 md:w-10 h-1 mx-2 rounded-full ${idx < currentIdx ? 'bg-brand-secondary' : 'bg-slate-200'}`} />
+                    <div className={`w-6 md:w-12 h-1.5 mx-3 rounded-full transition-all duration-500 ${idx < currentIdx ? 'opacity-100' : 'bg-slate-200'}`} style={{ backgroundColor: idx < currentIdx ? primaryColor : undefined }} />
                 )}
                 </div>
             ))}
@@ -126,26 +137,27 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
 
             {step === 'sede' && (
             <div className="space-y-10 animate-fade-in">
-                <div className="text-center bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
-                <h2 className="text-4xl font-ubuntu font-bold text-slate-800">Selecciona tu ubicación</h2>
-                <p className="text-slate-500 mt-3 text-lg">Elige la sede más cercana para tu atención.</p>
+                <div className="text-center bg-white p-12 rounded-[4rem] shadow-sm border border-slate-100">
+                  <h2 className="text-4xl font-ubuntu font-bold text-brand-navy">Selecciona tu ubicación</h2>
+                  <p className="text-slate-500 mt-4 text-lg">Elige la sede que te resulte más conveniente.</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 {sedes.filter(s => s.companyId === company.id).map(s => (
                     <button 
                     key={s.id}
                     onClick={() => { setBooking(prev => ({...prev, sede: s})); setStep('service'); }}
-                    className="p-10 bg-white rounded-5xl border-2 border-transparent hover:border-brand-secondary hover:shadow-2xl transition-all text-left group flex flex-col items-center sm:items-start relative overflow-hidden shadow-sm"
+                    className="p-10 bg-white rounded-[3.5rem] border-2 border-transparent hover:shadow-[0_40px_80px_rgba(0,0,0,0.1)] transition-all text-left group flex flex-col items-center sm:items-start relative overflow-hidden shadow-sm"
+                    style={{ '--hover-color': primaryColor } as any}
                     >
-                    <div className="absolute -right-8 -top-8 text-brand-lightSecondary opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Hexagon size={120} />
+                    <div className="absolute -right-8 -top-8 text-slate-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Hexagon size={140} />
                     </div>
-                    <div className="w-20 h-20 rounded-3xl bg-brand-lightSecondary flex items-center justify-center text-brand-secondary mb-8 group-hover:scale-110 transition-transform shadow-inner">
+                    <div className="w-20 h-20 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-400 mb-8 group-hover:scale-110 transition-all shadow-inner" style={{ color: primaryColor, backgroundColor: `${primaryColor}10` }}>
                         <MapPin size={40} />
                     </div>
-                    <h4 className="font-ubuntu font-bold text-slate-800 text-2xl mb-2">{s.name}</h4>
+                    <h4 className="font-ubuntu font-bold text-brand-navy text-2xl mb-2">{s.name}</h4>
                     <p className="text-slate-400 font-medium mb-6">{s.address}</p>
-                    <div className="flex items-center gap-2 text-brand-secondary font-bold uppercase tracking-widest text-xs">
+                    <div className="flex items-center gap-2 font-bold uppercase tracking-widest text-xs" style={{ color: primaryColor }}>
                         Agendar Aquí <ChevronRight size={20} />
                     </div>
                     </button>
@@ -156,181 +168,181 @@ const PatientPortal: React.FC<PatientPortalProps> = ({ company, sedes, onBack, o
 
             {step === 'service' && (
             <div className="space-y-10 animate-fade-in max-w-xl mx-auto">
-                <div className="text-center bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
-                <h2 className="text-4xl font-ubuntu font-bold text-slate-800">¿Qué necesitas hoy?</h2>
-                <p className="text-slate-500 mt-3">Estamos listos para cuidar de tu salud.</p>
+                <div className="text-center bg-white p-12 rounded-[4rem] shadow-sm border border-slate-100">
+                  <h2 className="text-4xl font-ubuntu font-bold text-brand-navy">¿Qué servicio necesitas?</h2>
+                  <p className="text-slate-500 mt-4">Nuestros especialistas están listos para atenderte.</p>
                 </div>
                 <button 
                 onClick={() => setStep('info')}
-                className="w-full p-10 bg-white rounded-5xl border-2 border-brand-accent shadow-xl transition-all text-left flex items-center gap-8 group"
+                className="w-full p-10 bg-white rounded-[3.5rem] border-2 shadow-xl transition-all text-left flex items-center gap-8 group"
+                style={{ borderColor: primaryColor }}
                 >
-                <div className="w-20 h-20 rounded-3xl bg-brand-lightAccent flex items-center justify-center text-brand-accent group-hover:scale-110 transition-transform">
+                <div className="w-20 h-20 rounded-[2rem] flex items-center justify-center group-hover:scale-110 transition-transform" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
                     <Stethoscope size={40} />
                 </div>
                 <div className="flex-1">
-                    <h4 className="font-ubuntu font-bold text-slate-800 text-2xl mb-1">Consulta General</h4>
-                    <p className="text-slate-500 font-medium italic">Evaluación profesional completa</p>
+                    <h4 className="font-ubuntu font-bold text-brand-navy text-2xl mb-1">Consulta General</h4>
+                    <p className="text-slate-500 font-medium italic">Atención médica integral</p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-brand-accent flex items-center justify-center text-white shadow-lg">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: primaryColor }}>
                     <CheckCircle2 size={24} />
                 </div>
                 </button>
-                <button onClick={() => setStep('sede')} className="w-full text-slate-400 hover:text-brand-primary font-bold text-xs uppercase tracking-widest">Cambiar de sede</button>
+                <button onClick={() => setStep('sede')} className="w-full text-slate-400 hover:text-brand-navy font-bold text-xs uppercase tracking-widest text-center">Cambiar de sede</button>
             </div>
             )}
 
             {step === 'info' && (
             <div className="space-y-10 animate-fade-in max-w-xl mx-auto">
-                <div className="text-center bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
-                <h2 className="text-4xl font-ubuntu font-bold text-slate-800">Tus Datos</h2>
-                <p className="text-slate-500 mt-3">Para poder confirmar tu espacio.</p>
+                <div className="text-center bg-white p-12 rounded-[4rem] shadow-sm border border-slate-100">
+                  <h2 className="text-4xl font-ubuntu font-bold text-brand-navy">Tus Datos</h2>
+                  <p className="text-slate-500 mt-4">Ingresa tu información de contacto.</p>
                 </div>
-                <div className="bg-white p-10 rounded-5xl shadow-2xl border border-slate-100 space-y-6">
-                <div className="space-y-3">
-                    <label className="text-xs font-bold text-brand-navy uppercase tracking-widest ml-1 flex items-center gap-2">
-                    <UserIcon size={16} className="text-brand-secondary" /> Nombre Completo
-                    </label>
-                    <input 
-                    type="text"
-                    value={booking.patientName}
-                    onChange={(e) => setBooking(prev => ({...prev, patientName: e.target.value}))}
-                    className="w-full px-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary font-medium text-lg shadow-inner"
-                    placeholder="Tu nombre completo"
-                    />
-                </div>
+                <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100 space-y-8">
+                  <div className="space-y-3">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <UserIcon size={16} style={{ color: primaryColor }} /> Nombre Completo
+                      </label>
+                      <input 
+                      type="text"
+                      value={booking.patientName}
+                      onChange={(e) => setBooking(prev => ({...prev, patientName: e.target.value}))}
+                      className="w-full px-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-medium text-lg shadow-inner outline-none transition-all"
+                      style={{ '--tw-ring-color': primaryColor } as any}
+                      placeholder="Tu nombre completo"
+                      />
+                  </div>
 
-                <div className="space-y-3">
-                    <label className="text-xs font-bold text-brand-navy uppercase tracking-widest ml-1 flex items-center gap-2">
-                    <IdCard size={16} className="text-brand-primary" /> DNI / Identificación
-                    </label>
-                    <input 
-                    type="text"
-                    value={booking.patientDni}
-                    onChange={(e) => setBooking(prev => ({...prev, patientDni: e.target.value}))}
-                    className="w-full px-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary font-medium text-lg shadow-inner"
-                    placeholder="Número de documento"
-                    />
-                </div>
+                  <div className="space-y-3">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <IdCard size={16} style={{ color: primaryColor }} /> DNI / Identificación
+                      </label>
+                      <input 
+                      type="text"
+                      value={booking.patientDni}
+                      onChange={(e) => setBooking(prev => ({...prev, patientDni: e.target.value}))}
+                      className="w-full px-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-medium text-lg shadow-inner outline-none transition-all"
+                      style={{ '--tw-ring-color': primaryColor } as any}
+                      placeholder="Número de documento"
+                      />
+                  </div>
 
-                <div className="space-y-3">
-                    <label className="text-xs font-bold text-brand-navy uppercase tracking-widest ml-1 flex items-center gap-2 text-slate-300">
-                    <Mail size={16} /> Correo Electrónico (Opcional)
-                    </label>
-                    <input 
-                    type="email"
-                    value={booking.patientEmail}
-                    onChange={(e) => setBooking(prev => ({...prev, patientEmail: e.target.value}))}
-                    className="w-full px-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary font-medium text-lg shadow-inner"
-                    placeholder="ejemplo@correo.com"
-                    />
-                </div>
-
-                <div className="space-y-3">
-                    <label className="text-xs font-bold text-brand-navy uppercase tracking-widest ml-1">WhatsApp de contacto</label>
-                    <div className="flex gap-3">
-                    <select 
-                        value={booking.countryCode}
-                        onChange={(e) => setBooking(prev => ({...prev, countryCode: e.target.value}))}
-                        className="bg-slate-50 border-none rounded-2xl py-5 pl-5 pr-10 focus:ring-2 focus:ring-brand-primary text-sm font-bold shadow-inner"
-                    >
-                        {countryCodes.map(c => (
-                        <option key={c.code} value={c.code}>{c.code} {c.country}</option>
-                        ))}
-                    </select>
-                    <div className="relative flex-1">
-                        <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-brand-gray" size={20} />
+                  <div className="space-y-3">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <Phone size={16} style={{ color: primaryColor }} /> WhatsApp de contacto
+                      </label>
+                      <div className="flex gap-3">
+                        <select 
+                            value={booking.countryCode}
+                            onChange={(e) => setBooking(prev => ({...prev, countryCode: e.target.value}))}
+                            className="bg-slate-50 border-none rounded-2xl py-5 pl-5 pr-10 focus:ring-2 text-sm font-bold shadow-inner outline-none"
+                            style={{ '--tw-ring-color': primaryColor } as any}
+                        >
+                            <option value="+51">🇵🇪 +51</option>
+                            <option value="+57">🇨🇴 +57</option>
+                            <option value="+52">🇲🇽 +52</option>
+                        </select>
                         <input 
-                        type="tel"
-                        value={booking.patientPhone}
-                        onChange={(e) => setBooking(prev => ({...prev, patientPhone: e.target.value}))}
-                        className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary font-medium text-lg shadow-inner"
-                        placeholder="900 000 000"
+                          type="tel"
+                          value={booking.patientPhone}
+                          onChange={(e) => setBooking(prev => ({...prev, patientPhone: e.target.value}))}
+                          className="w-full px-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-medium text-lg shadow-inner outline-none transition-all"
+                          style={{ '--tw-ring-color': primaryColor } as any}
+                          placeholder="900 000 000"
                         />
-                    </div>
-                    </div>
-                </div>
-                <button 
-                    disabled={!booking.patientName || !booking.patientDni || booking.patientPhone.length < 7}
-                    onClick={() => setStep('schedule')}
-                    className="w-full py-6 bg-brand-navy text-white rounded-3xl font-bold text-xl hover:bg-brand-primary shadow-2xl shadow-brand-navy/20 transition-all active:scale-95 disabled:opacity-50 mt-4"
-                >
-                    Elegir Horario
-                </button>
+                      </div>
+                  </div>
+                  
+                  <button 
+                      disabled={!booking.patientName || !booking.patientDni || booking.patientPhone.length < 7}
+                      onClick={() => setStep('schedule')}
+                      className="w-full py-6 text-white rounded-[2rem] font-bold text-xl shadow-2xl transition-all active:scale-95 disabled:opacity-50 mt-4"
+                      style={{ backgroundColor: primaryColor }}
+                  >
+                      Siguiente: Horarios
+                  </button>
                 </div>
             </div>
             )}
 
             {step === 'schedule' && (
             <div className="space-y-10 animate-fade-in max-w-xl mx-auto">
-                <div className="text-center bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
-                <h2 className="text-4xl font-ubuntu font-bold text-slate-800">Fecha y Hora</h2>
-                <p className="text-slate-500 mt-3">Selecciona cuándo deseas tu cita.</p>
+                <div className="text-center bg-white p-12 rounded-[4rem] shadow-sm border border-slate-100">
+                  <h2 className="text-4xl font-ubuntu font-bold text-brand-navy">Fecha y Hora</h2>
+                  <p className="text-slate-500 mt-4">Selecciona cuándo deseas venir.</p>
                 </div>
-                <div className="bg-white p-10 rounded-5xl shadow-2xl border border-slate-100 space-y-8">
-                <div className="space-y-3">
-                    <label className="text-xs font-bold text-brand-navy uppercase tracking-widest ml-1">Fecha de Cita</label>
-                    <input 
-                    type="date"
-                    value={booking.date}
-                    onChange={(e) => setBooking(prev => ({...prev, date: e.target.value}))}
-                    className="w-full px-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-brand-primary font-medium text-lg shadow-inner"
-                    />
-                </div>
-                <div className="space-y-3">
-                    <label className="text-xs font-bold text-brand-navy uppercase tracking-widest ml-1">Hora Preferida</label>
-                    <div className="grid grid-cols-3 gap-3">
-                    {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'].map(t => (
-                        <button 
-                        key={t}
-                        onClick={() => setBooking(prev => ({...prev, time: t}))}
-                        className={`py-4 rounded-2xl font-bold text-sm transition-all border-2 ${
-                            booking.time === t ? 'bg-brand-secondary text-white border-brand-secondary shadow-lg' : 'bg-white text-slate-400 border-slate-100 hover:border-brand-secondary'
-                        }`}
-                        >
-                        {t}
-                        </button>
-                    ))}
-                    </div>
-                </div>
-                <button 
-                    disabled={!booking.date || !booking.time}
-                    onClick={() => setStep('confirm')}
-                    className="w-full py-6 bg-brand-navy text-white rounded-3xl font-bold text-xl hover:bg-brand-primary shadow-2xl shadow-brand-navy/20 transition-all active:scale-95 disabled:opacity-50 mt-4"
-                >
-                    Revisar Resumen
-                </button>
+                <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100 space-y-8">
+                  <div className="space-y-3">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Fecha de la Cita</label>
+                      <input 
+                      type="date"
+                      value={booking.date}
+                      onChange={(e) => setBooking(prev => ({...prev, date: e.target.value}))}
+                      className="w-full px-6 py-5 bg-slate-50 border-none rounded-2xl focus:ring-2 font-medium text-lg shadow-inner outline-none"
+                      style={{ '--tw-ring-color': primaryColor } as any}
+                      />
+                  </div>
+                  <div className="space-y-3">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Hora Disponible</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'].map(t => (
+                            <button 
+                            key={t}
+                            onClick={() => setBooking(prev => ({...prev, time: t}))}
+                            className={`py-4 rounded-2xl font-bold text-sm transition-all border-2 ${
+                                booking.time === t ? 'text-white shadow-lg' : 'bg-white text-slate-400 border-slate-50 hover:border-slate-200'
+                            }`}
+                            style={{ 
+                              backgroundColor: booking.time === t ? primaryColor : undefined,
+                              borderColor: booking.time === t ? primaryColor : undefined
+                            }}
+                            >
+                            {t}
+                            </button>
+                        ))}
+                      </div>
+                  </div>
+                  <button 
+                      disabled={!booking.date || !booking.time}
+                      onClick={() => setStep('confirm')}
+                      className="w-full py-6 text-white rounded-[2rem] font-bold text-xl shadow-2xl transition-all active:scale-95 disabled:opacity-50 mt-4"
+                      style={{ backgroundColor: primaryColor }}
+                  >
+                      Ver Resumen
+                  </button>
                 </div>
             </div>
             )}
 
             {step === 'confirm' && (
             <div className="space-y-10 animate-fade-in max-w-xl mx-auto">
-                <div className="text-center bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
-                <h2 className="text-4xl font-ubuntu font-bold text-slate-800">Resumen Final</h2>
-                <p className="text-slate-500 mt-3">Verifica los detalles antes de agendar.</p>
+                <div className="text-center bg-white p-12 rounded-[4rem] shadow-sm border border-slate-100">
+                  <h2 className="text-4xl font-ubuntu font-bold text-brand-navy">Confirmación</h2>
+                  <p className="text-slate-500 mt-4">Verifica los detalles antes de solicitar.</p>
                 </div>
-                <div className="bg-white p-10 rounded-5xl shadow-2xl border border-slate-100 space-y-6">
-                <div className="space-y-4 text-sm font-medium text-slate-600">
-                    <div className="flex justify-between border-b border-slate-50 pb-3">
-                        <span className="text-slate-400">Paciente:</span>
-                        <span className="text-brand-navy font-bold">{booking.patientName}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-50 pb-3">
-                        <span className="text-slate-400">Sede:</span>
-                        <span className="text-brand-navy font-bold">{booking.sede?.name}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-50 pb-3">
-                        <span className="text-slate-400">Fecha:</span>
-                        <span className="text-brand-navy font-bold">{booking.date}</span>
-                    </div>
-                </div>
-                
-                <button 
-                    onClick={handleConfirmBooking}
-                    className="w-full py-6 bg-brand-secondary text-white rounded-3xl font-bold text-xl hover:bg-brand-secondary/90 shadow-2xl shadow-brand-secondary/20 transition-all active:scale-95 mt-6 flex items-center justify-center gap-3"
-                >
-                    <CheckCircle2 size={24} /> Confirmar Cita
-                </button>
+                <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100 space-y-8">
+                  <div className="space-y-4 text-brand-navy">
+                      <div className="flex justify-between border-b border-slate-50 pb-4">
+                          <span className="text-slate-400 font-medium">Paciente:</span>
+                          <span className="font-bold">{booking.patientName}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-slate-50 pb-4">
+                          <span className="text-slate-400 font-medium">Sede:</span>
+                          <span className="font-bold">{booking.sede?.name}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-slate-50 pb-4">
+                          <span className="text-slate-400 font-medium">Fecha y Hora:</span>
+                          <span className="font-bold">{booking.date} a las {booking.time}</span>
+                      </div>
+                  </div>
+                  
+                  <button 
+                      onClick={handleConfirmBooking}
+                      className="w-full py-7 text-white rounded-[2.5rem] font-bold text-2xl shadow-2xl transition-all active:scale-95 mt-6 flex items-center justify-center gap-4"
+                      style={{ backgroundColor: primaryColor }}
+                  >
+                      <MessageCircle size={28} /> Solicitar vía WhatsApp
+                  </button>
                 </div>
             </div>
             )}
